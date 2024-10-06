@@ -2,13 +2,13 @@
 mod configuration;
 mod controller;
 mod skins;
-use controller::{ButtonState, Controller};
+use controller::{button_state::ButtonState, controller::Controller};
 
 use ggez::{
     conf, event, graphics::{self, DrawParam}, timer::sleep, Context, ContextBuilder, GameResult
 };
 use rusb2snes::SyncClient;
-use skins::Skin;
+use skins::skin::Skin;
 use std::{error::Error, time};
 
 use configuration::AppConfig;
