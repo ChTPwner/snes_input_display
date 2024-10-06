@@ -1,11 +1,11 @@
-use rusb2snes::SyncClient;
 use crate::configuration::ControllerConfig;
-use crate::controller::ButtonState;
 use crate::controller::hex_to_u32;
+use crate::controller::ButtonState;
+use rusb2snes::SyncClient;
 
 use serde::Deserialize;
-use std::{collections::HashMap, fs};
 use std::error::Error;
+use std::{collections::HashMap, fs};
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct ControllerLayouts {

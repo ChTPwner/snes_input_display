@@ -1,12 +1,11 @@
-pub mod skin;
-mod theme;
 mod button;
 mod button_map;
+pub mod skin;
+mod theme;
 
-use crate::skins::theme::Theme;
 use crate::skins::button::Button;
 use crate::skins::button_map::ButtonsMap;
-
+use crate::skins::theme::Theme;
 
 use ggez::Context;
 use quick_xml::{
@@ -23,7 +22,6 @@ use std::{
 };
 
 use crate::controller::pressed::Pressed;
-
 
 type LayoutResult = Result<(Vec<Theme>, BTreeMap<Pressed, Button>), Box<dyn Error>>;
 
@@ -107,4 +105,3 @@ fn parse_attributes(t: BytesStart) -> HashMap<String, String> {
     }
     attributes_map
 }
-

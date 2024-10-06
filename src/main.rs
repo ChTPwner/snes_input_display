@@ -5,7 +5,10 @@ mod skins;
 use controller::{button_state::ButtonState, controller::Controller};
 
 use ggez::{
-    conf, event, graphics::{self, DrawParam}, timer::sleep, Context, ContextBuilder, GameResult
+    conf, event,
+    graphics::{self, DrawParam},
+    timer::sleep,
+    Context, ContextBuilder, GameResult,
 };
 use rusb2snes::SyncClient;
 use skins::skin::Skin;
@@ -40,7 +43,7 @@ impl InputViewer {
 
         /* Connect to USB2SNES Server */
         let mut client: SyncClient;
-        
+
         // loop until connected to usb2snes
         loop {
             match SyncClient::connect() {
@@ -49,11 +52,11 @@ impl InputViewer {
                     let msg = format!("Connected to {}", &client.app_version()?);
                     println!("{}", msg);
                     break;
-                },
+                }
                 Err(_) => {
                     println!("Not connected to a usb2snes client");
                     sleep(time::Duration::from_secs(1));
-                }, 
+                }
             }
         }
 
@@ -64,20 +67,18 @@ impl InputViewer {
         loop {
             match client.list_device() {
                 Ok(l) => {
-                    if l.len() > 0 { 
+                    if l.len() > 0 {
                         devices = l;
                         break;
                     }
-                },
-                Err(_) => println!("Error listing devices")
+                }
+                Err(_) => println!("Error listing devices"),
             }
         }
 
         client.attach(&devices[0])?;
         let msg = format!("Attached to {}", &devices[0]);
         println!("{}", msg);
-
-
 
         // Set the window size
         ctx.gfx.set_mode(conf::WindowMode {

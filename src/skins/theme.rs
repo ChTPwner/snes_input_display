@@ -1,13 +1,7 @@
-use ggez::{
-    graphics::Image,
-    Context,
-};
-use quick_xml::events::BytesStart;
 use crate::skins::parse_attributes;
-use std::{
-    error::Error,
-    path::Path
-};
+use ggez::{graphics::Image, Context};
+use quick_xml::events::BytesStart;
+use std::{error::Error, path::Path};
 
 #[derive(Debug, Clone)]
 pub struct Theme {

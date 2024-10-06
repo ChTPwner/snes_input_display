@@ -1,13 +1,9 @@
-use crate::skins::Theme;
 use crate::skins::ButtonsMap;
+use crate::skins::Theme;
+use crate::skins::{buttons_map_to_array, get_layout, parse_backgrounds};
 use ggez::Context;
-use crate::skins::{get_layout, parse_backgrounds, buttons_map_to_array};
 
-use std::{
-    error::Error,
-    path::Path,
-    path::PathBuf,
-};
+use std::{error::Error, path::Path, path::PathBuf};
 
 // #[derive(Debug)]
 pub struct Skin {

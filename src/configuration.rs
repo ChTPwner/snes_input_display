@@ -44,7 +44,7 @@ impl AppConfig {
         println!("Creating a new settings file: {path}");
         let default_dir = dirs::document_dir().unwrap().join("snes-input-display");
         let default_inputs_file_path = default_dir.join("inputs_addresses.json");
-        let default_skins_dir_path =  default_dir.join("skins");
+        let default_skins_dir_path = default_dir.join("skins");
 
         let config = AppConfig {
             controller: ControllerConfig {

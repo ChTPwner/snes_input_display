@@ -7,10 +7,7 @@ use ggez::{
 };
 
 use quick_xml::events::BytesStart;
-use std::{
-    error::Error,
-    path::Path
-};
+use std::{error::Error, path::Path};
 
 #[derive(Debug)]
 pub struct Button {
