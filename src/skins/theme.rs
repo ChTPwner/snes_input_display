@@ -7,7 +7,7 @@ use std::{error::Error, path::Path};
 pub struct Theme {
     pub theme: String,
     pub image: Image,
-    pub width: f32,
+    // pub width: f32,
     pub height: f32,
 }
 
@@ -16,13 +16,13 @@ impl Theme {
         let attributes = parse_attributes(t);
         let image_path = Path::new("/").join(dir).join(&attributes["image"]);
         let image = Image::from_path(ctx, image_path)?;
-        let width = image.width() as f32;
+        // let width = image.width() as f32;
         let height = image.height() as f32;
 
         Ok(Self {
             theme: attributes["name"].to_owned().to_lowercase(),
             image,
-            width,
+            // width,
             height,
         })
     }
