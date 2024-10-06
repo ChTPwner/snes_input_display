@@ -6,7 +6,7 @@ use controller::{ButtonState, Controller};
 
 use ggez::{
     conf, event,
-    graphics::{self, DrawParam},
+    graphics::{self, DrawParam, Rect},
     input::keyboard::{KeyCode, KeyInput},
     timer::sleep,
     Context, ContextBuilder, GameResult,
@@ -33,6 +33,7 @@ struct InputViewer {
     client: SyncClient,
     events: ButtonState,
     config: AppConfig,
+    canvas_resized: bool,
 }
 
 impl InputViewer {
@@ -89,12 +90,12 @@ impl InputViewer {
         println!("{}", msg);
 
         // Set the window size
-        ctx.gfx.set_mode(conf::WindowMode {
-            width: skin.background.image.width() as f32,
-            height: skin.background.height,
-            resizable: true,
-            ..Default::default()
-        })?;
+        // ctx.gfx.set_mode(conf::WindowMode {
+        //     width: skin.background.image.width() as f32,
+        //     height: skin.background.height,
+        //     resizable: true,
+        //     ..Default::default()
+        // })?;
 
         Ok(Self {
             controller,
@@ -103,6 +104,7 @@ impl InputViewer {
             client,
             events: ButtonState::default(),
             config,
+            canvas_resized: true,
         })
     }
 }
@@ -116,7 +118,29 @@ impl event::EventHandler for InputViewer {
     }
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
+        // let mut canvas =
+        //     graphics::Canvas::from_image(ctx, self.skin.background.image.clone(), None);
         let mut canvas = graphics::Canvas::from_frame(ctx, None);
+        if self.canvas_resized {
+            ctx.gfx.set_mode(conf::WindowMode {
+                width: self.skin.background.image.width() as f32,
+                height: self.skin.background.height,
+                resizable: true,
+                ..Default::default()
+            })?;
+
+            // canvas.set_screen_coordinates(Rect::new(
+            //     0 as f32,
+            //     0 as f32,
+            //     self.skin.background.image.width() as f32,
+            //     self.skin.background.height,
+            // ));
+            let size = ctx.gfx.drawable_size();
+
+            canvas.set_screen_coordinates(graphics::Rect::new(0., 0., size.0, size.1));
+            self.canvas_resized = false;
+        }
+
         canvas.draw(&self.skin.background.image, DrawParam::new());
 
         // Draw inputs
@@ -161,12 +185,7 @@ impl event::EventHandler for InputViewer {
                     self.skin =
                         Skin::new(&self.config.skin.skins_path, next_skin_name, None, ctx).unwrap();
                     // dbg!(&self.skin.theme);
-                    ctx.gfx.set_mode(conf::WindowMode {
-                        width: self.skin.background.image.width() as f32,
-                        height: self.skin.background.height,
-                        resizable: true,
-                        ..Default::default()
-                    })?;
+                    self.canvas_resized = true;
                 }
             }
             // Changing theme
