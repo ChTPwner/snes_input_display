@@ -67,7 +67,7 @@ impl InputViewer {
         loop {
             match client.list_device() {
                 Ok(l) => {
-                    if l.len() > 0 {
+                    if l.is_empty() {
                         devices = l;
                         break;
                     }
