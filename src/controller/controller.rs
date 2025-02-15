@@ -1,11 +1,22 @@
 use crate::configuration::ControllerConfig;
-use crate::controller::hex_to_u32;
+
 use crate::controller::ButtonState;
 use rusb2snes::SyncClient;
 
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer};
 use std::error::Error;
 use std::{collections::HashMap, fs};
+
+/// Serialization function for converting a 24-bit hex address string into `u32`.
+fn hex_to_u32<'de, D>(deserializer: D) -> Result<u32, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    use serde::de::Error;
+
+    let hex_address = String::deserialize(deserializer)?;
+    u32::from_str_radix(&hex_address, 16).map_err(Error::custom)
+}
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct ControllerLayouts {

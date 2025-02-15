@@ -1,21 +1,8 @@
-use serde::{Deserialize, Deserializer};
-
 pub mod button_state;
 pub mod buttons_iter;
 pub mod controller;
 pub mod pressed;
 use crate::controller::button_state::ButtonState;
-
-/// Serialization function for converting a 24-bit hex address string into `u32`.
-fn hex_to_u32<'de, D>(deserializer: D) -> Result<u32, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    use serde::de::Error;
-
-    let hex_address = String::deserialize(deserializer)?;
-    u32::from_str_radix(&hex_address, 16).map_err(Error::custom)
-}
 
 #[cfg(test)]
 mod tests {
