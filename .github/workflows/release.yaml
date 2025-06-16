@@ -17,9 +17,12 @@ jobs:
           - os: windows-latest
             artifact_name: snes_input_display.exe
             asset_name: snes_input_display-windows-amd64.exe
-          - os: macos-latest
+          - os: macos-13
             artifact_name: snes_input_display
             asset_name: snes_input_display-macos-amd64
+          - os: macos-latest
+            artifact_name: snes_input_display
+            asset_name: snes_input_display-macos-arm64
     runs-on: ${{ matrix.os }}
     steps:
 
@@ -34,15 +37,10 @@ jobs:
     - name: Install alsa and udev
       if: ${{ runner.os == 'Linux' }}
       run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
-  
-    # - name: Run cargo check --all-targets w/ -D warnings
-    #   run: cargo check --all-targets
-    #   env:
-    #     RUSTFLAGS: "-D warnings"
 
     - name: Run cargo build --release
       run: cargo build --release
-      
+
     - name: Upload binaries to release
       uses: svenstaro/upload-release-action@v2
       with:
