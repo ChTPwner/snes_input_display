@@ -8,15 +8,13 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
+        os: [windows-latest, ubuntu-latest, macos-13, macos-latest]
         # toolchain: stable
     runs-on: ${{ matrix.os }}
     steps:
 
     - name: Checkout
       uses: actions/checkout@v4
-
-    # - run: echo ${{ github.workspace }}
 
     - name: Get Rust toolchain
       uses: moonrepo/setup-rust@v1
@@ -26,23 +24,6 @@ jobs:
     - name: Install alsa and udev
       if: ${{ runner.os == 'Linux' }}
       run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
-  
-    # - name: Run cargo check --all-targets w/ -D warnings
-    #   run: cargo check --all-targets
-    #   env:
-    #     RUSTFLAGS: "-D warnings"
 
     - name: Run cargo build --release
       run: cargo build --release
-      
-    # - uses: actions/upload-artifact@v4
-    #   if: ${{ runner.os != 'Windows' }}
-    #   with:
-    #     name: snes-input-display-${{ github.ref_name }}-${{ runner.os }}
-    #     path:  ${{ github.workspace }}/target/release/snes_input_display
-    
-    # - uses: actions/upload-artifact@v4
-    #   if: ${{ runner.os == 'Windows' }}
-    #   with:
-    #     name: snes-input-display-${{ github.ref_name }}-${{ runner.os }}
-    #     path:  ${{ github.workspace }}\target\release\snes_input_display.exe
