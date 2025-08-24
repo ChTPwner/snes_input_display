@@ -1,6 +1,6 @@
 pub mod button_state;
 pub mod buttons_iter;
-pub mod controller;
+pub mod controller_impl;
 pub mod pressed;
 use crate::controller::button_state::ButtonState;
 
