@@ -42,9 +42,27 @@ impl InputViewer {
         )?;
 
         /* Connect to USB2SNES Server */
-        let mut client: SyncClient;
 
         // loop until connected to usb2snes
+
+        // Set the window size
+        ctx.gfx.set_mode(conf::WindowMode {
+            width: skin.background.image.width() as f32,
+            height: skin.background.height,
+            resizable: true,
+            ..Default::default()
+        })?;
+
+        Ok(Self {
+            controller,
+            skin,
+            client: InputViewer::connect()?,
+            events: ButtonState::default(),
+        })
+    }
+
+    fn connect() -> Result<SyncClient, Box<dyn Error>> {
+        let mut client: SyncClient;
         loop {
             match SyncClient::connect() {
                 Ok(s) => {
@@ -79,21 +97,7 @@ impl InputViewer {
         client.attach(&devices[0])?;
         let msg = format!("Attached to {}", &devices[0]);
         println!("{}", msg);
-
-        // Set the window size
-        ctx.gfx.set_mode(conf::WindowMode {
-            width: skin.background.image.width() as f32,
-            height: skin.background.height,
-            resizable: true,
-            ..Default::default()
-        })?;
-
-        Ok(Self {
-            controller,
-            skin,
-            client,
-            events: ButtonState::default(),
-        })
+        Ok(client)
     }
 }
 
@@ -101,7 +105,12 @@ impl event::EventHandler for InputViewer {
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
         // Update code here...
         // const DESIRED_FPS: u32 = 60;
-        self.events = self.controller.pushed(&mut self.client).unwrap();
+        if let Ok(e) = self.controller.pushed(&mut self.client) {
+            self.events = e;
+        } else {
+            self.events = ButtonState::default();
+            self.client = InputViewer::connect().unwrap();
+        }
         Ok(())
     }
 
