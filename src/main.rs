@@ -2,7 +2,7 @@
 mod configuration;
 mod controller;
 mod skins;
-use controller::{button_state::ButtonState, controller::Controller};
+use controller::{button_state::ButtonState, controller_impl::Controller};
 
 use ggez::{
     conf, event,
