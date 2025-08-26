@@ -6,28 +6,23 @@ use controller::{button_state::ButtonState, controller_impl::Controller};
 
 use ggez::{
     conf, event,
-    graphics::{self, DrawParam},
-    timer::sleep,
+    graphics::{self, Color, DrawParam, Text, TextFragment},
     Context, ContextBuilder, GameResult,
 };
 use rusb2snes::SyncClient;
 use skins::skin::Skin;
-use std::{error::Error, time};
+use std::error::Error;
 
 use configuration::AppConfig;
 
 const APP_NAME: &str = "Snes Input Display";
 
-// enum AppState {
-//     // Menu,
-//     InputViewer,
-// }
-
 struct InputViewer {
     controller: Controller,
     skin: Skin,
-    client: SyncClient,
+    client: Option<SyncClient>,
     events: ButtonState,
+    message: Option<String>,
 }
 
 impl InputViewer {
@@ -41,10 +36,6 @@ impl InputViewer {
             ctx,
         )?;
 
-        /* Connect to USB2SNES Server */
-
-        // loop until connected to usb2snes
-
         // Set the window size
         ctx.gfx.set_mode(conf::WindowMode {
             width: skin.background.image.width() as f32,
@@ -56,61 +47,63 @@ impl InputViewer {
         Ok(Self {
             controller,
             skin,
-            client: InputViewer::connect()?,
+            client: None,
             events: ButtonState::default(),
+            message: None,
         })
     }
 
-    fn connect() -> Result<SyncClient, Box<dyn Error>> {
-        let mut client: SyncClient;
-        loop {
-            match SyncClient::connect() {
-                Ok(s) => {
-                    client = s;
-                    let msg = format!("Connected to {}", &client.app_version()?);
-                    println!("{}", msg);
-                    break;
-                }
-                Err(_) => {
-                    println!("Not connected to a usb2snes client");
-                    sleep(time::Duration::from_secs(1));
-                }
-            }
-        }
-
-        client.set_name(String::from(APP_NAME))?;
-
-        let devices: Vec<String>;
-        // loop until a device is available
-        loop {
-            match client.list_device() {
-                Ok(l) => {
-                    if !l.is_empty() {
-                        devices = l;
-                        break;
+    fn connect(&mut self) -> Result<Option<SyncClient>, Box<dyn Error>> {
+        let client = match SyncClient::connect() {
+            Ok(mut s) => {
+                s.set_name(String::from(APP_NAME))?;
+                match s.list_device() {
+                    Ok(l) => {
+                        if !l.is_empty() {
+                            s.attach(&l[0])?;
+                            let msg = format!("Attached to {}", &l[0]);
+                            println!("{}", msg);
+                        } else {
+                            self.message =
+                                Some("Not attached to usb2snes comptable endpoint".to_string());
+                        }
+                    }
+                    Err(_) => {
+                        println!("No device available");
+                        return Ok(Some(s));
                     }
                 }
-                Err(_) => println!("Error listing devices"),
+                Some(s)
             }
-        }
+            Err(_) => {
+                self.message = Some("Not connected to usb2snes websocket".to_string());
+                None
+            }
+        };
 
-        client.attach(&devices[0])?;
-        let msg = format!("Attached to {}", &devices[0]);
-        println!("{}", msg);
         Ok(client)
     }
 }
 
 impl event::EventHandler for InputViewer {
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
-        // Update code here...
-        // const DESIRED_FPS: u32 = 60;
-        if let Ok(e) = self.controller.pushed(&mut self.client) {
-            self.events = e;
-        } else {
-            self.events = ButtonState::default();
-            self.client = InputViewer::connect().unwrap();
-        }
+        match self.client {
+            Some(ref mut c) => match self.controller.pushed(c) {
+                Ok(e) => {
+                    self.events = e;
+                    self.message = None;
+                }
+                Err(_) => {
+                    self.events = ButtonState::default();
+                    self.client = None;
+                }
+            },
+            None => match self.connect() {
+                Ok(c) => self.client = c,
+                Err(_) => self.client = None,
+            },
+        };
+
         Ok(())
     }
 
@@ -126,6 +119,14 @@ impl event::EventHandler for InputViewer {
                 DrawParam::default().dest(self.skin.buttons[event].rect.point()),
             );
         });
+        if let Some(ref msg) = self.message {
+            let text = Text::new(TextFragment {
+                text: msg.to_string(),
+                color: Some(Color::new(1.0, 0.0, 0.0, 1.0)),
+                ..Default::default()
+            });
+            canvas.draw(&text, DrawParam::default());
+        }
         canvas.finish(ctx)
     }
 }
