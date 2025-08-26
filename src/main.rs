@@ -26,7 +26,9 @@ const APP_NAME: &str = "Snes Input Display";
 struct InputViewer {
     controller: Controller,
     skin: Skin,
-    client: SyncClient,
+    client: Option<SyncClient>,
+    connected: bool,
+    attached: bool,
     events: ButtonState,
 }
 
@@ -56,48 +58,46 @@ impl InputViewer {
         Ok(Self {
             controller,
             skin,
-            client: InputViewer::connect()?,
+            client: None,
+            connected: false,
+            attached: false,
             events: ButtonState::default(),
         })
     }
 
-    fn connect() -> Result<SyncClient, Box<dyn Error>> {
-        let mut client: SyncClient;
-        loop {
-            match SyncClient::connect() {
-                Ok(s) => {
-                    client = s;
-                    let msg = format!("Connected to {}", &client.app_version()?);
-                    println!("{}", msg);
-                    break;
-                }
-                Err(_) => {
-                    println!("Not connected to a usb2snes client");
-                    sleep(time::Duration::from_secs(1));
-                }
+    fn connect(&mut self) -> Result<(), Box<dyn Error>> {
+        match SyncClient::connect() {
+            Ok(mut s) => {
+                let msg = format!("Connected to {}", &s.app_version()?);
+                println!("{}", msg);
+                s.set_name(String::from(APP_NAME))?;
+                self.client = Some(s);
+                self.connected = true;
             }
-        }
+            Err(_) => {
+                println!("Not connected to a usb2snes client");
+                sleep(time::Duration::from_secs(1));
+            }
+        };
 
-        client.set_name(String::from(APP_NAME))?;
+        Ok(())
+    }
 
-        let devices: Vec<String>;
-        // loop until a device is available
-        loop {
-            match client.list_device() {
+    fn attach(&mut self) -> Result<(), Box<dyn Error>> {
+        if let Some(ref mut c) = self.client {
+            match c.list_device() {
                 Ok(l) => {
                     if !l.is_empty() {
-                        devices = l;
-                        break;
+                        c.attach(&l[0])?;
+                        let msg = format!("Attached to {}", &l[0]);
+                        println!("{}", msg);
+                        self.attached = true;
                     }
                 }
                 Err(_) => println!("Error listing devices"),
             }
         }
-
-        client.attach(&devices[0])?;
-        let msg = format!("Attached to {}", &devices[0]);
-        println!("{}", msg);
-        Ok(client)
+        Ok(())
     }
 }
 
@@ -105,11 +105,19 @@ impl event::EventHandler for InputViewer {
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
         // Update code here...
         // const DESIRED_FPS: u32 = 60;
-        if let Ok(e) = self.controller.pushed(&mut self.client) {
-            self.events = e;
-        } else {
-            self.events = ButtonState::default();
-            self.client = InputViewer::connect().unwrap();
+        if !self.connected {
+            let _ = self.connect();
+        }
+        if !self.attached {
+            let _ = self.attach();
+        }
+        if let Some(ref mut c) = self.client {
+            if let Ok(e) = self.controller.pushed(c) {
+                self.events = e;
+            } else {
+                self.events = ButtonState::default();
+                self.attached = false;
+            }
         }
         Ok(())
     }
