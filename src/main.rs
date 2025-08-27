@@ -11,7 +11,7 @@ use ggez::{
 };
 use rusb2snes::SyncClient;
 use skins::skin::Skin;
-use std::error::Error;
+use std::{env, error::Error};
 
 use configuration::AppConfig;
 
@@ -133,7 +133,8 @@ impl event::EventHandler for InputViewer {
 
 fn main() -> Result<GameResult, Box<dyn Error>> {
     /* Setup Configs */
-    let app_config = AppConfig::new()?;
+    let config_path = env::args().nth(1);
+    let app_config = AppConfig::new(config_path)?;
 
     let (mut ctx, event_loop) = ContextBuilder::new(APP_NAME, "ChTBoner")
         .add_resource_path(&app_config.skin.skins_path)

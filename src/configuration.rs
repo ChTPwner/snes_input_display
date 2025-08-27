@@ -1,7 +1,7 @@
 // use config::{Config, ConfigError};
 use serde::{Deserialize, Serialize};
 use std::error::Error;
-use std::fs::{read_to_string, write, DirBuilder, File};
+use std::fs::{read_to_string, write, File};
 use std::path::{Path, PathBuf};
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -24,16 +24,18 @@ pub struct AppConfig {
 }
 
 impl AppConfig {
-    pub fn new() -> Result<Self, Box<dyn Error>> {
-        let config_file_path = dirs::config_local_dir()
-            .unwrap()
-            .join("snes-input-display")
-            .join("settings.toml");
-        // let config_file_path = config_file_path.to_str().unwrap();
-        dbg!(&config_file_path);
-        // if the Path doesn't exist, create
+    pub fn new(path: Option<String>) -> Result<Self, Box<dyn Error>> {
+        let config_file_path = match path {
+            Some(p) => PathBuf::from(p),
+            None => dirs::config_local_dir()
+                .unwrap()
+                .join("snes-input-display")
+                .join("settings.toml"),
+        };
+        let config_file_path = config_file_path.to_str().unwrap();
+        dbg!(config_file_path);
         if !Path::new(&config_file_path).exists() {
-            Self::create_default(&config_file_path)?;
+            Self::create_default(config_file_path)?;
         }
         // let mut file = File::open(config_file_path)?;
         let contents = read_to_string(config_file_path)?;
@@ -41,9 +43,9 @@ impl AppConfig {
         Ok(config)
     }
 
-    fn create_default(path: &PathBuf) -> Result<(), Box<dyn Error>> {
+    fn create_default(path: &str) -> Result<(), Box<dyn Error>> {
+        println!("Creating a new settings file: {path}");
         let default_dir = dirs::document_dir().unwrap().join("snes-input-display");
-
         let default_inputs_file_path = default_dir.join("inputs_addresses.json");
         let default_skins_dir_path = default_dir.join("skins");
 
@@ -58,10 +60,6 @@ impl AppConfig {
                 skin_theme: "skin_theme".to_string(),
             },
         };
-        println!("Creating a new settings file: {:?}.", path);
-        let toml_parent_dir = path.parent().unwrap();
-        dbg!(&toml_parent_dir);
-        DirBuilder::new().recursive(true).create(toml_parent_dir)?;
         let toml = toml::to_string(&config)?;
         File::create(path)?;
         write(path, toml)?;
