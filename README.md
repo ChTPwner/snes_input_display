@@ -134,8 +134,6 @@ The RAM Search tools of Bizhawk are great to find the values.
 
 An example file can be found [here](./confs/Defaults.json)
 ## TROUBLESHOOTING
-SNI or QUSB2SNES must be up and running and connected to a powered on console.
-
 Make sure all paths and info are correct in the configuration file.
 
 
@@ -148,6 +146,5 @@ https://github.com/developwisely/squabbler-retrospy-nintendospy-skins
 ## TODO
 - Configuration via GUI
 - Better error management
-- Default setup on startup
 
 GNU GPLv3

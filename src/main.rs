@@ -54,7 +54,7 @@ impl InputViewer {
     }
 
     fn connect(&mut self) -> Result<Option<SyncClient>, Box<dyn Error>> {
-        let client = match SyncClient::connect() {
+        let client = match SyncClient::connect(Some("172.16.0.32".to_string()), None) {
             Ok(mut s) => {
                 s.set_name(String::from(APP_NAME))?;
                 match s.list_device() {
@@ -90,6 +90,7 @@ impl event::EventHandler for InputViewer {
         match self.client {
             Some(ref mut c) => match self.controller.pushed(c) {
                 Ok(e) => {
+                    dbg!(&e);
                     self.events = e;
                     self.message = None;
                 }
