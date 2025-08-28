@@ -24,10 +24,12 @@ impl Skin {
     ) -> Result<Skin, Box<dyn Error>> {
         let skin_filename = "skin.xml";
         let file_path = path.join(name).join(skin_filename);
-        // let directory = file_path.parent().unwrap().to_owned();
 
         let (backgrounds, buttons) = get_layout(file_path, name, ctx)?;
-        let background = parse_backgrounds(backgrounds, theme).unwrap();
+        let background = match parse_backgrounds(backgrounds, theme) {
+            Some(t) => t,
+            None => return Err("Could not parse skin backgroung".into()),
+        };
         Ok(Self {
             // metadata,
             background,

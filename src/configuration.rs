@@ -25,7 +25,7 @@ pub struct AppConfig {
 
 impl AppConfig {
     pub fn new(path: Option<String>) -> Result<Self, Box<dyn Error>> {
-        let config_file_path = AppConfig::generate_config_file(path)?;
+        let config_file_path = AppConfig::generate_config_file_path(path)?;
         if !Path::new(&config_file_path).exists() {
             Self::create_default(&config_file_path)?;
         }
@@ -34,12 +34,12 @@ impl AppConfig {
         Ok(config)
     }
 
-    fn generate_config_file(path: Option<String>) -> Result<PathBuf, Box<dyn Error>> {
+    fn generate_config_file_path(path: Option<String>) -> Result<PathBuf, Box<dyn Error>> {
         let config_file_path = match path {
             Some(p) => PathBuf::from(p),
             None => match dirs::config_local_dir() {
                 Some(d) => d.join("snes-input-display").join("settings.toml"),
-                None => return Err("Could not generated OS default user config directory".into()),
+                None => return Err("Could not generate default user config directory".into()),
             },
         };
         Ok(config_file_path)
@@ -50,7 +50,10 @@ impl AppConfig {
 
         let msg = format!("Creating a new settings file: {}", fmt_path);
         println!("{}", msg);
-        let default_dir = dirs::document_dir().unwrap().join("snes-input-display");
+        let default_dir = match dirs::document_dir() {
+            Some(d) => d.join("snes-input-display"),
+            None => return Err("Could not generate OS default Documents directory".into()),
+        };
         let default_inputs_file_path = default_dir.join("inputs_addresses.json");
         let default_skins_dir_path = default_dir.join("skins");
 

@@ -18,9 +18,9 @@ pub struct Button {
 
 impl Button {
     pub fn new(t: BytesStart, dir: &str, ctx: &mut Context) -> Result<Self, Box<dyn Error>> {
-        let attributes = parse_attributes(t);
-        let x = attributes["x"].parse::<f32>().unwrap();
-        let y = attributes["y"].parse::<f32>().unwrap();
+        let attributes = parse_attributes(t)?;
+        let x = attributes["x"].parse::<f32>()?;
+        let y = attributes["y"].parse::<f32>()?;
         let image_path = Path::new("/").join(dir).join(&attributes["image"]);
 
         let image = Image::from_path(ctx, image_path)?;

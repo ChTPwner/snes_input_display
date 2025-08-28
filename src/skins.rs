@@ -26,7 +26,7 @@ use crate::controller::pressed::Pressed;
 type LayoutResult = Result<(Vec<Theme>, BTreeMap<Pressed, Button>), Box<dyn Error>>;
 
 fn get_layout(file_path: PathBuf, name: &str, ctx: &mut Context) -> LayoutResult {
-    let file = load_file(&file_path);
+    let file = load_file(&file_path)?;
     let mut reader = Reader::from_str(&file);
     let mut _metadata: HashMap<String, String> = HashMap::new();
     let mut backgrounds: Vec<Theme> = Vec::new();
@@ -54,11 +54,11 @@ fn get_layout(file_path: PathBuf, name: &str, ctx: &mut Context) -> LayoutResult
     Ok((backgrounds, buttons))
 }
 
-fn load_file(path: &Path) -> String {
-    let mut file = fs::File::open(path).unwrap();
+fn load_file(path: &Path) -> Result<String, Box<dyn Error>> {
+    let mut file = fs::File::open(path)?;
     let mut text = String::new();
-    file.read_to_string(&mut text).unwrap();
-    text
+    file.read_to_string(&mut text)?;
+    Ok(text)
 }
 
 fn parse_backgrounds(backgrounds_vec: Vec<Theme>, theme: &String) -> Option<Theme> {
@@ -88,20 +88,19 @@ fn buttons_map_to_array(mut buttons_map: BTreeMap<Pressed, Button>) -> Box<Butto
     ]))
 }
 
-fn parse_attributes(t: BytesStart) -> HashMap<String, String> {
+fn parse_attributes(t: BytesStart) -> Result<HashMap<String, String>, Box<dyn Error>> {
     let mut attributes_map = HashMap::new();
     let attributes = t.attributes().map(|a| a.unwrap());
     for attribute in attributes {
-        let value = attribute.unescape_value().unwrap().into_owned();
+        let value = attribute.unescape_value()?.into_owned();
         let mut key = String::new();
         attribute
             .key
             .local_name()
             .into_inner()
-            .read_to_string(&mut key)
-            .unwrap();
+            .read_to_string(&mut key)?;
 
         attributes_map.insert(key, value);
     }
-    attributes_map
+    Ok(attributes_map)
 }
