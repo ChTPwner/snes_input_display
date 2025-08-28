@@ -25,26 +25,31 @@ pub struct AppConfig {
 
 impl AppConfig {
     pub fn new(path: Option<String>) -> Result<Self, Box<dyn Error>> {
-        let config_file_path = match path {
-            Some(p) => PathBuf::from(p),
-            None => dirs::config_local_dir()
-                .unwrap()
-                .join("snes-input-display")
-                .join("settings.toml"),
-        };
-        let config_file_path = config_file_path.to_str().unwrap();
-        dbg!(config_file_path);
+        let config_file_path = AppConfig::generate_config_file(path)?;
         if !Path::new(&config_file_path).exists() {
-            Self::create_default(config_file_path)?;
+            Self::create_default(&config_file_path)?;
         }
-        // let mut file = File::open(config_file_path)?;
         let contents = read_to_string(config_file_path)?;
         let config: AppConfig = toml::from_str(&contents)?;
         Ok(config)
     }
 
-    fn create_default(path: &str) -> Result<(), Box<dyn Error>> {
-        println!("Creating a new settings file: {path}");
+    fn generate_config_file(path: Option<String>) -> Result<PathBuf, Box<dyn Error>> {
+        let config_file_path = match path {
+            Some(p) => PathBuf::from(p),
+            None => match dirs::config_local_dir() {
+                Some(d) => d.join("snes-input-display").join("settings.toml"),
+                None => return Err("Could not generated OS default user config directory".into()),
+            },
+        };
+        Ok(config_file_path)
+    }
+
+    fn create_default(path: &PathBuf) -> Result<(), Box<dyn Error>> {
+        let fmt_path = path.to_string_lossy();
+
+        let msg = format!("Creating a new settings file: {}", fmt_path);
+        println!("{}", msg);
         let default_dir = dirs::document_dir().unwrap().join("snes-input-display");
         let default_inputs_file_path = default_dir.join("inputs_addresses.json");
         let default_skins_dir_path = default_dir.join("skins");
