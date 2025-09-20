@@ -46,10 +46,6 @@ impl InputViewer {
         })?;
 
         let endpoint = config.usb2snes.unwrap_or_default();
-        // let endpoint = match config.usb2snes
-        //     Some(e) => e,
-        //     None => USB2SnesEndpoint::default()
-        // };
 
         Ok(Self {
             controller,

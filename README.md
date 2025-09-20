@@ -50,6 +50,12 @@ skin_name = "snes-super-famicom-squabbler"
 # ex: <background name="Black" image="input-display-overlay-famicom.png" />
 skin_theme = "Black"
 
+# the usb2snes parameters are not required,
+# but can be used to connect to a non localhost usb2snes endpoint
+[usb2snes]
+address = "172.0.0.1"
+port = 23074
+
 ```
 A settings file example can be found [here](./confs/settings.toml)
 
