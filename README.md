@@ -50,6 +50,12 @@ skin_name = "snes-super-famicom-squabbler"
 # ex: <background name="Black" image="input-display-overlay-famicom.png" />
 skin_theme = "Black"
 
+# the usb2snes parameters are not required,
+# but can be used to connect to a non localhost usb2snes endpoint
+[usb2snes]
+address = "172.0.0.1"
+port = 23074
+
 ```
 A settings file example can be found [here](./confs/settings.toml)
 
@@ -134,8 +140,6 @@ The RAM Search tools of Bizhawk are great to find the values.
 
 An example file can be found [here](./confs/Defaults.json)
 ## TROUBLESHOOTING
-SNI or QUSB2SNES must be up and running and connected to a powered on console.
-
 Make sure all paths and info are correct in the configuration file.
 
 
@@ -148,6 +152,5 @@ https://github.com/developwisely/squabbler-retrospy-nintendospy-skins
 ## TODO
 - Configuration via GUI
 - Better error management
-- Default setup on startup
 
 GNU GPLv3

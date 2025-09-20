@@ -7,7 +7,7 @@ use ggez::{
     graphics::{self, Color, DrawParam, Text, TextFragment},
     Context, GameResult,
 };
-use rusb2snes::SyncClient;
+use rusb2snes::{SyncClient, USB2SnesEndpoint} ;
 use std::error::Error;
 
 pub struct InputViewer {
@@ -16,6 +16,7 @@ pub struct InputViewer {
     client: Option<SyncClient>,
     events: ButtonState,
     message: Option<String>,
+    endpoint: USB2SnesEndpoint
 }
 pub const APP_NAME: &str = "Snes Input Display";
 
@@ -38,17 +39,20 @@ impl InputViewer {
             ..Default::default()
         })?;
 
+        let endpoint = config.usb2snes.unwrap_or_default();
+
         Ok(Self {
             controller,
             skin,
             client: None,
             events: ButtonState::default(),
             message: None,
+            endpoint,
         })
     }
 
     fn connect(&mut self) -> Result<Option<SyncClient>, Box<dyn Error>> {
-        let client = match SyncClient::connect() {
+        let client = match SyncClient::connect(&self.endpoint) {
             Ok(mut s) => {
                 s.set_name(String::from(APP_NAME))?;
                 match s.list_device() {

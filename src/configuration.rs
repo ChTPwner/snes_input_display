@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::fs::{read_to_string, write, File};
 use std::path::{Path, PathBuf};
+use rusb2snes::USB2SnesEndpoint;
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct ControllerConfig {
@@ -21,6 +22,7 @@ pub struct SkinConfig {
 pub struct AppConfig {
     pub controller: ControllerConfig,
     pub skin: SkinConfig,
+    pub usb2snes: Option<USB2SnesEndpoint>
 }
 
 impl AppConfig {
@@ -59,6 +61,7 @@ impl AppConfig {
                 skin_name: "skin_folder_name".to_string(),
                 skin_theme: "skin_theme".to_string(),
             },
+            usb2snes: Some(USB2SnesEndpoint::default())
         };
         let toml = toml::to_string(&config)?;
         File::create(path)?;
