@@ -36,10 +36,7 @@ impl Pressed {
             0x2000 => Some(Pressed::Select),
             0x4000 => Some(Pressed::Y),
             0x8000 => Some(Pressed::B),
-            _ => panic!(
-                "Called Pressed::try_from_bit with invalid input: {:#06x}",
-                bit
-            ),
+            _ => None,
         }
     }
 }
