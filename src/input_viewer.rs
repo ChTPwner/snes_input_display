@@ -7,8 +7,10 @@ use ggez::{
     graphics::{self, Color, DrawParam, Text, TextFragment},
     Context, GameResult,
 };
-use rusb2snes::{SyncClient, USB2SnesEndpoint} ;
+use rusb2snes::{SyncClient, USB2SnesEndpoint};
 use std::error::Error;
+
+pub const APP_NAME: &str = "Snes Input Display";
 
 pub struct InputViewer {
     controller: Controller,
@@ -16,9 +18,9 @@ pub struct InputViewer {
     client: Option<SyncClient>,
     events: ButtonState,
     message: Option<String>,
-    endpoint: USB2SnesEndpoint
+    prev_message: Option<String>,
+    endpoint: USB2SnesEndpoint,
 }
-pub const APP_NAME: &str = "Snes Input Display";
 
 impl InputViewer {
     pub fn new(ctx: &mut Context, config: AppConfig) -> Result<Self, Box<dyn Error>> {
@@ -47,6 +49,7 @@ impl InputViewer {
             client: None,
             events: ButtonState::default(),
             message: None,
+            prev_message: None,
             endpoint,
         })
     }
@@ -63,7 +66,7 @@ impl InputViewer {
                             println!("{}", msg);
                         } else {
                             self.message =
-                                Some("Not attached to usb2snes comptable endpoint".to_string());
+                                Some("Not attached to usb2snes compatible endpoint".to_string());
                         }
                     }
                     Err(_) => {
@@ -101,6 +104,14 @@ impl event::EventHandler for InputViewer {
                 Err(_) => self.client = None,
             },
         };
+        if self.message != self.prev_message {
+            let deb = match &self.message {
+                Some(s) => s,
+                None => "",
+            };
+            println!("{}", deb);
+            self.prev_message = self.message.clone();
+        }
 
         Ok(())
     }
@@ -120,7 +131,7 @@ impl event::EventHandler for InputViewer {
         if let Some(ref msg) = self.message {
             let text = Text::new(TextFragment {
                 text: msg.to_string(),
-                color: Some(Color::new(1.0, 0.0, 0.0, 1.0)),
+                color: Some(Color::RED),
                 ..Default::default()
             });
             canvas.draw(&text, DrawParam::default());

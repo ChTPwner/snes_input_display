@@ -16,4 +16,6 @@ quick-xml = { version = "0.38", features = ["overlapped-lists", "serialize"] }
 dirs = "6"
 ggez = "0.9"
 rusb2snes = "0.3"
+# rusb2snes = { path = "../rusb2snes" }
+
 toml = "0.9"
