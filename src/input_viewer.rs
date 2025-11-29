@@ -1,4 +1,5 @@
-use crate::controller::{button_state::ButtonState, controller_impl::Controller};
+use crate::controller::button_state::ButtonState;
+use crate::controller::controller_impl::ControllerData;
 
 use crate::configuration::AppConfig;
 use crate::skins::skin::Skin;
@@ -13,7 +14,7 @@ use std::error::Error;
 pub const APP_NAME: &str = "Snes Input Display";
 
 pub struct InputViewer {
-    controller: Controller,
+    controller: ControllerData,
     skin: Skin,
     client: Option<SyncClient>,
     events: ButtonState,
@@ -24,7 +25,7 @@ pub struct InputViewer {
 
 impl InputViewer {
     pub fn new(ctx: &mut Context, config: AppConfig) -> Result<Self, Box<dyn Error>> {
-        let controller = Controller::new(&config.controller);
+        let controller = ControllerData::new(&config.controller)?;
 
         let skin = Skin::new(
             &config.skin.skins_path,
@@ -89,7 +90,7 @@ impl InputViewer {
 impl event::EventHandler for InputViewer {
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
         match self.client {
-            Some(ref mut c) => match self.controller.pushed(c) {
+            Some(ref mut c) => match self.controller.current_addresses.pushed(c) {
                 Ok(e) => {
                     self.events = e;
                     self.message = None;

@@ -2,8 +2,17 @@ use crate::skins::ButtonsMap;
 use crate::skins::Theme;
 use crate::skins::{buttons_map_to_array, get_layout, parse_backgrounds};
 use ggez::Context;
+use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
 
 use std::{error::Error, path::Path};
+
+#[derive(Deserialize, Serialize, Debug)]
+pub struct SkinConfig {
+    pub skins_path: PathBuf,
+    pub skin_name: String,
+    pub skin_theme: String,
+}
 
 // #[derive(Debug)]
 pub struct Skin {
