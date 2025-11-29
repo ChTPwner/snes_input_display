@@ -6,7 +6,7 @@ mod skins;
 use input_viewer::{InputViewer, APP_NAME};
 use std::{env, error::Error};
 
-use ggez::{conf, event, ContextBuilder, GameResult};
+use ggez::{event, ContextBuilder, GameResult};
 
 use configuration::AppConfig;
 
@@ -17,7 +17,6 @@ fn main() -> Result<GameResult, Box<dyn Error>> {
 
     let (mut ctx, event_loop) = ContextBuilder::new(APP_NAME, "ChTBoner")
         .add_resource_path(&app_config.skin.skins_path)
-        .window_setup(conf::WindowSetup::default().title(APP_NAME))
         .build()
         .expect("aieee, could not create ggez context!");
 

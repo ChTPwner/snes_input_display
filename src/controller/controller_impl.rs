@@ -1,55 +1,74 @@
-use crate::configuration::ControllerConfig;
-
-use crate::controller::ButtonState;
-use rusb2snes::SyncClient;
-
-use serde::{Deserialize, Deserializer};
+use serde::{Deserialize, Serialize};
 use std::error::Error;
+use std::path::PathBuf;
 use std::{collections::HashMap, fs};
 
-/// Serialization function for converting a 24-bit hex address string into `u32`.
-fn hex_to_u32<'de, D>(deserializer: D) -> Result<u32, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    use serde::de::Error;
+use crate::controller::controller_addresses::ControllerAddresses;
 
-    let hex_address = String::deserialize(deserializer)?;
-    u32::from_str_radix(&hex_address, 16).map_err(Error::custom)
+#[derive(Deserialize, Serialize, Debug)]
+pub struct ControllerConfig {
+    pub input_config_path: PathBuf,
+    pub layout: String,
 }
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct ControllerLayouts {
-    pub layouts: HashMap<String, Controller>,
+    pub layouts: HashMap<String, ControllerAddresses>,
 }
 
-#[derive(Deserialize, Debug, Clone, Copy)]
-pub struct Controller {
-    #[serde(deserialize_with = "hex_to_u32")]
-    pub address_low: u32,
-    #[serde(deserialize_with = "hex_to_u32")]
-    pub address_high: u32,
+#[derive(Deserialize, Debug)]
+pub struct ControllerData {
+    pub layout_name: String,
+    pub available_addresses: ControllerLayouts,
+    pub available_layouts: Vec<String>,
+    pub current_addresses: ControllerAddresses,
+    pub current_layout_index: usize,
 }
 
-impl Controller {
-    pub fn new(config: &ControllerConfig) -> Self {
+impl ControllerData {
+    pub fn new(config: &ControllerConfig) -> Result<Self, Box<dyn Error>> {
+        // get path of layouts json from config file
         let config_data =
             fs::read_to_string(&config.input_config_path).expect("Unable open to config file");
-        let layouts_data: ControllerLayouts =
+
+        let available_addresses: ControllerLayouts =
             serde_json::from_str(&config_data).expect("Unable to parse");
-        layouts_data.layouts[&config.layout]
+
+        let mut available_layouts: Vec<String> = available_addresses
+            .layouts
+            .iter()
+            .map(|(name, _)| name.clone())
+            .collect();
+        available_layouts.sort();
+
+        let current_layout_index = available_layouts
+            .iter()
+            .position(|n| n == &config.layout)
+            .unwrap();
+
+        let current_addresses = available_addresses.layouts[&config.layout];
+
+        Ok(ControllerData {
+            layout_name: config.layout.clone(),
+            available_addresses,
+            available_layouts,
+            current_layout_index,
+            current_addresses,
+        })
     }
 
-    pub fn pushed(&self, client: &mut SyncClient) -> Result<ButtonState, Box<dyn Error>> {
-        let base_address = std::cmp::min(self.address_low, self.address_high);
-        let offset_low = self.address_low.saturating_sub(base_address) as usize;
-        let offset_high = self.address_high.saturating_sub(base_address) as usize;
-        let read_length = offset_low.abs_diff(offset_high).saturating_add(1);
-        debug_assert!((2..256).contains(&read_length));
-        let input_bytes = client.get_address(base_address, read_length)?;
-        let button_state =
-            ButtonState::from_le_bytes([input_bytes[offset_low], input_bytes[offset_high]]);
+    pub fn get_next_layout(&mut self) {
+        // add one and modulo to loop on the list
+        self.current_layout_index = (self.current_layout_index + 1) % self.available_layouts.len();
+        self.layout_name = self.available_layouts[self.current_layout_index].clone();
+        self.current_addresses = self.available_addresses.layouts[&self.layout_name];
+    }
 
-        Ok(button_state)
+    pub fn get_prev_layout(&mut self) {
+        // add one and modulo to loop on the list
+        let len = self.available_layouts.len();
+        self.current_layout_index = (self.current_layout_index + len - 1) % len;
+        self.layout_name = self.available_layouts[self.current_layout_index].clone();
+        self.current_addresses = self.available_addresses.layouts[&self.layout_name];
     }
 }

@@ -1,32 +1,22 @@
-// use config::{Config, ConfigError};
+use rusb2snes::USB2SnesEndpoint;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::fs::{read_to_string, write, File};
 use std::path::{Path, PathBuf};
-use rusb2snes::USB2SnesEndpoint;
 
-#[derive(Deserialize, Serialize, Debug)]
-pub struct ControllerConfig {
-    pub input_config_path: PathBuf,
-    pub layout: String,
-}
-
-#[derive(Deserialize, Serialize, Debug)]
-pub struct SkinConfig {
-    pub skins_path: PathBuf,
-    pub skin_name: String,
-    pub skin_theme: String,
-}
+use crate::controller::controller_impl::ControllerConfig;
+use crate::skins::skin::SkinConfig;
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct AppConfig {
     pub controller: ControllerConfig,
     pub skin: SkinConfig,
-    pub usb2snes: Option<USB2SnesEndpoint>
+    pub usb2snes: Option<USB2SnesEndpoint>,
 }
 
 impl AppConfig {
     pub fn new(path: Option<String>) -> Result<Self, Box<dyn Error>> {
+        // compute config_file_path
         let config_file_path = match path {
             Some(p) => PathBuf::from(p),
             None => dirs::config_local_dir()
@@ -36,10 +26,13 @@ impl AppConfig {
         };
         let config_file_path = config_file_path.to_str().unwrap();
         dbg!(config_file_path);
+
+        // check if path exists or create default settings file
         if !Path::new(&config_file_path).exists() {
             Self::create_default(config_file_path)?;
         }
-        // let mut file = File::open(config_file_path)?;
+
+        // read and load config
         let contents = read_to_string(config_file_path)?;
         let config: AppConfig = toml::from_str(&contents)?;
         Ok(config)
@@ -61,7 +54,7 @@ impl AppConfig {
                 skin_name: "skin_folder_name".to_string(),
                 skin_theme: "skin_theme".to_string(),
             },
-            usb2snes: Some(USB2SnesEndpoint::default())
+            usb2snes: Some(USB2SnesEndpoint::default()),
         };
         let toml = toml::to_string(&config)?;
         File::create(path)?;
