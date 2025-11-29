@@ -71,6 +71,10 @@ $ chmod +x snes_input_display_linux_amd64
 $ chmod +x snes_input_display_mac_amd64
 ```
 
+## Keyboard shortcurts
+- J = select next entry in the layouts from the controller config file
+- K = select previous entry in the layouts from the controller config file
+
 ## Game List Working with the Defaults layout
 You should try with the Default Layout if you're on the Sd2Snes/FxPakPro. It will NOT work with an emulator
 The F90718 address doesn't work on emulator.
@@ -147,10 +151,5 @@ Make sure all paths and info are correct in the configuration file.
 [Skarsnik](https://github.com/Skarsnik)
 
 https://github.com/developwisely/squabbler-retrospy-nintendospy-skins
-
-
-## TODO
-- Configuration via GUI
-- Better error management
 
 GNU GPLv3
