@@ -11,11 +11,6 @@ pub struct ControllerConfig {
     pub layout: String,
 }
 
-// struct ControllerLayout {
-//     name: String,
-//     addresses: ControllerAddresses,
-// }
-
 #[derive(Deserialize, Debug, Clone)]
 pub struct ControllerLayouts {
     pub layouts: HashMap<String, ControllerAddresses>,
@@ -23,6 +18,7 @@ pub struct ControllerLayouts {
 
 #[derive(Deserialize, Debug)]
 pub struct ControllerData {
+    pub layout_name: String,
     pub available_addresses: ControllerLayouts,
     pub available_layouts: Vec<String>,
     pub current_addresses: ControllerAddresses,
@@ -53,6 +49,7 @@ impl ControllerData {
         let current_addresses = available_addresses.layouts[&config.layout];
 
         Ok(ControllerData {
+            layout_name: config.layout.clone(),
             available_addresses,
             available_layouts,
             current_layout_index,
@@ -63,7 +60,15 @@ impl ControllerData {
     pub fn get_next_layout(&mut self) {
         // add one and modulo to loop on the list
         self.current_layout_index = (self.current_layout_index + 1) % self.available_layouts.len();
-        self.current_addresses =
-            self.available_addresses.layouts[&self.available_layouts[self.current_layout_index]];
+        self.layout_name = self.available_layouts[self.current_layout_index].clone();
+        self.current_addresses = self.available_addresses.layouts[&self.layout_name];
+    }
+
+    pub fn get_prev_layout(&mut self) {
+        // add one and modulo to loop on the list
+        let len = self.available_layouts.len();
+        self.current_layout_index = (self.current_layout_index + len - 1) % len;
+        self.layout_name = self.available_layouts[self.current_layout_index].clone();
+        self.current_addresses = self.available_addresses.layouts[&self.layout_name];
     }
 }
