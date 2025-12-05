@@ -28,6 +28,7 @@ type AttributeResult = Result<HashMap<String, String>, Box<dyn Error>>;
 
 fn get_layout(file_path: PathBuf, name: &str, ctx: &mut Context) -> LayoutResult {
     let file = load_file(&file_path);
+    // let layout_name = Path::new(name);
     let mut reader = Reader::from_str(&file);
     let mut _metadata: HashMap<String, String> = HashMap::new();
     let mut backgrounds: Vec<Theme> = Vec::new();

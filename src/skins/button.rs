@@ -7,7 +7,7 @@ use ggez::{
 };
 
 use quick_xml::events::BytesStart;
-use std::{error::Error, path::Path};
+use std::{error::Error, path::Path, path::MAIN_SEPARATOR_STR};
 
 #[derive(Debug)]
 pub struct Button {
@@ -17,11 +17,12 @@ pub struct Button {
 }
 
 impl Button {
-    pub fn new(t: BytesStart, dir: &str, ctx: &mut Context) -> Result<Self, Box<dyn Error>> {
+    pub fn new(t: BytesStart, skin_dir: &str, ctx: &mut Context) -> Result<Self, Box<dyn Error>> {
         let attributes = parse_attributes(t)?;
-        let x = attributes["x"].parse::<f32>()?;
-        let y = attributes["y"].parse::<f32>()?;
-        let image_path = Path::new("/").join(dir).join(&attributes["image"]);
+        let x = attributes.get("x").ok_or("missing x")?.parse::<f32>()?;
+        let y = attributes.get("y").ok_or("missing y")?.parse::<f32>()?;
+        let image_rel = attributes.get("image").ok_or("missing image")?;
+        let image_path =  Path::new(MAIN_SEPARATOR_STR).join(skin_dir).join(image_rel);
 
         let image = Image::from_path(ctx, image_path)?;
         // let image_info = ImageInfo::from_file_path(&image_path)?;
