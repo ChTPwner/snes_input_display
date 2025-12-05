@@ -24,6 +24,7 @@ use std::{
 use crate::controller::pressed::Pressed;
 
 type LayoutResult = Result<(Vec<Theme>, BTreeMap<Pressed, Button>), Box<dyn Error>>;
+type AttributeResult = Result<HashMap<String, String>, Box<dyn Error>>;
 
 fn get_layout(file_path: PathBuf, name: &str, ctx: &mut Context) -> LayoutResult {
     let file = load_file(&file_path);
@@ -34,7 +35,6 @@ fn get_layout(file_path: PathBuf, name: &str, ctx: &mut Context) -> LayoutResult
 
     loop {
         match reader.read_event() {
-            // Ok(Event::Start(t)) => _metadata = parse_attributes(t),
             Ok(Event::Empty(t)) => match t.name().as_ref() {
                 b"background" => {
                     let bg = Theme::new(t, name, ctx)?;
@@ -88,7 +88,7 @@ fn buttons_map_to_array(mut buttons_map: BTreeMap<Pressed, Button>) -> Box<Butto
     ]))
 }
 
-fn parse_attributes(t: BytesStart) -> HashMap<String, String> {
+fn parse_attributes(t: BytesStart) -> AttributeResult {
     let mut attributes_map = HashMap::new();
     let attributes = t.attributes().map(|a| a.unwrap());
     for attribute in attributes {
@@ -98,10 +98,9 @@ fn parse_attributes(t: BytesStart) -> HashMap<String, String> {
             .key
             .local_name()
             .into_inner()
-            .read_to_string(&mut key)
-            .unwrap();
+            .read_to_string(&mut key)?;
 
         attributes_map.insert(key, value);
     }
-    attributes_map
+    Ok(attributes_map)
 }

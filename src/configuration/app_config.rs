@@ -17,14 +17,23 @@ pub struct AppConfig {
 impl AppConfig {
     pub fn new(path: Option<String>) -> Result<Self, Box<dyn Error>> {
         // compute config_file_path
+        let config_dir_path = match dirs::config_local_dir() {
+            Some(c) => c,
+            None => return Err("Can't figure out configuration directory".into()),
+        };
+
         let config_file_path = match path {
             Some(p) => PathBuf::from(p),
-            None => dirs::config_local_dir()
-                .unwrap()
+            None => config_dir_path
                 .join("snes-input-display")
                 .join("settings.toml"),
         };
-        let config_file_path = config_file_path.to_str().unwrap();
+
+        let config_file_path = match config_file_path.to_str() {
+            Some(s) => s,
+            None => return Err("Cannot compute the configuration file path".into()),
+        };
+
         dbg!(config_file_path);
 
         // check if path exists or create default settings file
@@ -40,7 +49,11 @@ impl AppConfig {
 
     fn create_default(path: &str) -> Result<(), Box<dyn Error>> {
         println!("Creating a new settings file: {path}");
-        let default_dir = dirs::document_dir().unwrap().join("snes-input-display");
+        let documents_dir = match dirs::document_dir() {
+            Some(p) => p,
+            None => return Err("Could not compute Documents directory".into()),
+        };
+        let default_dir = documents_dir.join("snes-input-display");
         let default_inputs_file_path = default_dir.join("inputs_addresses.json");
         let default_skins_dir_path = default_dir.join("skins");
 

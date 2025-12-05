@@ -13,7 +13,7 @@ pub struct Theme {
 
 impl Theme {
     pub fn new(t: BytesStart, dir: &str, ctx: &mut Context) -> Result<Self, Box<dyn Error>> {
-        let attributes = parse_attributes(t);
+        let attributes = parse_attributes(t)?;
         let image_path = Path::new("/").join(dir).join(&attributes["image"]);
         let image = Image::from_path(ctx, image_path)?;
         // let width = image.width() as f32;
