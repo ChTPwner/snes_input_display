@@ -28,8 +28,7 @@ pub struct ControllerData {
 impl ControllerData {
     pub fn new(config: &ControllerConfig) -> Result<Self, Box<dyn Error>> {
         // get path of layouts json from config file
-        let config_data =
-            fs::read_to_string(&config.input_config_path).expect("Unable open to config file");
+        let config_data = fs::read_to_string(&config.input_config_path)?;
 
         let available_addresses: ControllerLayouts =
             serde_json::from_str(&config_data).expect("Unable to parse");
@@ -44,7 +43,7 @@ impl ControllerData {
         let current_layout_index = available_layouts
             .iter()
             .position(|n| n == &config.layout)
-            .unwrap();
+            .ok_or("Layout index not found")?;
 
         let current_addresses = available_addresses.layouts[&config.layout];
 
