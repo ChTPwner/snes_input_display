@@ -31,7 +31,7 @@ impl ControllerData {
         let config_data = fs::read_to_string(&config.input_config_path)?;
 
         let available_addresses: ControllerLayouts =
-            serde_json::from_str(&config_data).expect("Unable to parse");
+            serde_json::from_str(&config_data)?;
 
         let mut available_layouts: Vec<String> = available_addresses
             .layouts

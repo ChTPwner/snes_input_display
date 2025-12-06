@@ -72,21 +72,26 @@ fn parse_backgrounds(backgrounds_vec: Vec<Theme>, theme: &String) -> Option<Them
 /// initialized `Button`.
 fn buttons_map_to_array(mut buttons_map: BTreeMap<Pressed, Button>) -> Box<ButtonsMap> {
     debug_assert!(buttons_map.len() >= 12);
-
-    Box::new(ButtonsMap([
-        buttons_map.pop_first().unwrap().1,
-        buttons_map.pop_first().unwrap().1,
-        buttons_map.pop_first().unwrap().1,
-        buttons_map.pop_first().unwrap().1,
-        buttons_map.pop_first().unwrap().1,
-        buttons_map.pop_first().unwrap().1,
-        buttons_map.pop_first().unwrap().1,
-        buttons_map.pop_first().unwrap().1,
-        buttons_map.pop_first().unwrap().1,
-        buttons_map.pop_first().unwrap().1,
-        buttons_map.pop_first().unwrap().1,
-        buttons_map.pop_first().unwrap().1,
-    ]))
+    let array: ButtonsMap;
+    for (_, button) in buttons_map.iter() {
+        button
+    }
+    let array = ButtonsMap([
+        buttons_map.pop_first()?.1,
+        buttons_map.pop_first()?.1,
+        buttons_map.pop_first()?.1,
+        buttons_map.pop_first()?.1,
+        buttons_map.pop_first()?.1,
+        buttons_map.pop_first()?.1,
+        buttons_map.pop_first()?.1,
+        buttons_map.pop_first()?.1,
+        buttons_map.pop_first()?.1,
+        buttons_map.pop_first()?.1,
+        buttons_map.pop_first()?.1,
+        buttons_map.pop_first()?.1,
+    ]);
+    
+    Box::new(array)
 }
 
 fn parse_attributes(t: BytesStart) -> AttributeResult {
