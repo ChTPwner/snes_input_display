@@ -73,7 +73,7 @@ fn parse_backgrounds(backgrounds_vec: Vec<Theme>, theme: &String) -> Option<Them
 /// This allows testing the mapping logic using simple types (e.g. integers) without constructing
 /// heavy `Button` values.
 fn buttons_map_to_array_generic<T>(
-    mut buttons_map: BTreeMap<Pressed, T>,
+    buttons_map: BTreeMap<Pressed, T>,
 ) -> Result<[T; 12], Box<dyn Error>> {
     // The expected ordering (index -> Pressed) used by `ButtonsMap::index` implementation.
     const ORDER: [Pressed; 12] = [
