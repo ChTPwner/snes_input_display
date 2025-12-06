@@ -14,9 +14,10 @@ use quick_xml::{
 };
 use std::{
     collections::{BTreeMap, HashMap},
+    convert::TryInto,
     error::Error,
     fs,
-    io::Read,
+    io::{self, Read},
     path::Path,
     path::PathBuf,
 };
@@ -68,30 +69,58 @@ fn parse_backgrounds(backgrounds_vec: Vec<Theme>, theme: &String) -> Option<Them
         .find(|background| background.theme.eq(theme))
 }
 
-/// Produces an boxed array indexable by `Pressed` that maps a single button press to an
-/// initialized `Button`.
-fn buttons_map_to_array(mut buttons_map: BTreeMap<Pressed, Button>) -> Box<ButtonsMap> {
-    debug_assert!(buttons_map.len() >= 12);
-    let array: ButtonsMap;
-    for (_, button) in buttons_map.iter() {
-        button
+/// Generic helper that builds a fixed-size array of items for the expected `Pressed` ordering.
+/// This allows testing the mapping logic using simple types (e.g. integers) without constructing
+/// heavy `Button` values.
+fn buttons_map_to_array_generic<T>(
+    mut buttons_map: BTreeMap<Pressed, T>,
+) -> Result<[T; 12], Box<dyn Error>> {
+    // The expected ordering (index -> Pressed) used by `ButtonsMap::index` implementation.
+    const ORDER: [Pressed; 12] = [
+        Pressed::R,
+        Pressed::L,
+        Pressed::X,
+        Pressed::A,
+        Pressed::Right,
+        Pressed::Left,
+        Pressed::Down,
+        Pressed::Up,
+        Pressed::Start,
+        Pressed::Select,
+        Pressed::Y,
+        Pressed::B,
+    ];
+
+    // Collect items in ORDER, producing an io::Error if any are missing.
+    // Use a simple loop instead of try_fold to avoid type-inference ambiguity and keep the logic explicit.
+    let mut map = buttons_map;
+    let mut vec: Vec<T> = Vec::with_capacity(12);
+    for key in &ORDER {
+        if let Some(item) = map.remove(key) {
+            vec.push(item);
+        } else {
+            return Err(Box::new(io::Error::new(
+                io::ErrorKind::Other,
+                format!("Missing button: {:?}", key),
+            )));
+        }
     }
-    let array = ButtonsMap([
-        buttons_map.pop_first()?.1,
-        buttons_map.pop_first()?.1,
-        buttons_map.pop_first()?.1,
-        buttons_map.pop_first()?.1,
-        buttons_map.pop_first()?.1,
-        buttons_map.pop_first()?.1,
-        buttons_map.pop_first()?.1,
-        buttons_map.pop_first()?.1,
-        buttons_map.pop_first()?.1,
-        buttons_map.pop_first()?.1,
-        buttons_map.pop_first()?.1,
-        buttons_map.pop_first()?.1,
-    ]);
-    
-    Box::new(array)
+
+    // Convert Vec<T> -> [T; 12], returning a descriptive error if the length doesn't match.
+    let arr: [T; 12] = vec.try_into().map_err(|v: Vec<T>| -> Box<dyn Error> {
+        Box::from(format!("Expected 12 items, got {}", v.len()))
+    })?;
+
+    Ok(arr)
+}
+
+/// Produces an owned, boxed `ButtonsMap` from a `BTreeMap<Pressed, Button>`. Delegates to the
+/// generic builder above.
+fn buttons_map_to_array(
+    buttons_map: BTreeMap<Pressed, Button>,
+) -> Result<Box<ButtonsMap>, Box<dyn Error>> {
+    let arr = buttons_map_to_array_generic(buttons_map)?;
+    Ok(Box::new(ButtonsMap(arr)))
 }
 
 fn parse_attributes(t: BytesStart) -> AttributeResult {
@@ -104,4 +133,47 @@ fn parse_attributes(t: BytesStart) -> AttributeResult {
         attributes_map.insert(key, value);
     }
     Ok(attributes_map)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::BTreeMap;
+
+    #[test]
+    fn buttons_map_to_array_missing_returns_err() {
+        let map: BTreeMap<Pressed, i32> = BTreeMap::new();
+        let res = buttons_map_to_array_generic(map);
+        assert!(res.is_err(), "Expected error when buttons are missing");
+    }
+
+    #[test]
+    fn buttons_map_to_array_complete_succeeds_and_preserves_order() {
+        let mut map: BTreeMap<Pressed, i32> = BTreeMap::new();
+
+        // Insert values in arbitrary order; the function should reorder them into the expected array order.
+        map.insert(Pressed::A, 3);
+        map.insert(Pressed::B, 11);
+        map.insert(Pressed::X, 2);
+        map.insert(Pressed::Y, 10);
+        map.insert(Pressed::L, 1);
+        map.insert(Pressed::R, 0);
+        map.insert(Pressed::Left, 5);
+        map.insert(Pressed::Right, 4);
+        map.insert(Pressed::Up, 7);
+        map.insert(Pressed::Down, 6);
+        map.insert(Pressed::Start, 8);
+        map.insert(Pressed::Select, 9);
+
+        let arr = buttons_map_to_array_generic(map).expect("should succeed with full map");
+
+        // Verify the array matches the expected ORDER mapping (index -> value)
+        for (idx, &val) in arr.iter().enumerate() {
+            assert_eq!(
+                val as usize, idx,
+                "array value at index {} should be {}",
+                idx, idx
+            );
+        }
+    }
 }

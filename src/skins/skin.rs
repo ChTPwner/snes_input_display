@@ -41,7 +41,7 @@ impl Skin {
         };
         Ok(Self {
             background,
-            buttons: buttons_map_to_array(buttons),
+            buttons: buttons_map_to_array(buttons)?,
         })
     }
 }
