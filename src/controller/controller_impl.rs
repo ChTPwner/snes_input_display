@@ -34,9 +34,7 @@ impl ControllerData {
             serde_json::from_str(&config_data)?;
 
         let mut available_layouts: Vec<String> = available_addresses
-            .layouts
-            .iter()
-            .map(|(name, _)| name.clone())
+            .layouts.keys().cloned()
             .collect();
         available_layouts.sort();
 
