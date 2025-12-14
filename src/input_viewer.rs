@@ -1,8 +1,9 @@
-use crate::controller::button_state::ButtonState;
 use crate::controller::controller_impl::ControllerData;
+use crate::{controller::button_state::ButtonState, skins::skin::SkinData};
 
 use crate::configuration::AppConfig;
 use crate::skins::skin::Skin;
+
 use ggez::{
     conf, event,
     graphics::{self, Color, DrawParam, Text, TextFragment},
@@ -17,7 +18,7 @@ pub const APP_NAME: &str = "Snes Input Display";
 
 pub struct InputViewer {
     controller: ControllerData,
-    skin: Skin,
+    skin: SkinData,
     client: Option<SyncClient>,
     events: ButtonState,
     error_message: Option<String>,
@@ -30,17 +31,12 @@ impl InputViewer {
     pub fn new(ctx: &mut Context, config: AppConfig) -> Result<Self, Box<dyn Error>> {
         let controller = ControllerData::new(&config.controller)?;
 
-        let skin = Skin::new(
-            &config.skin.skins_path,
-            &config.skin.skin_name,
-            &config.skin.skin_theme.to_lowercase(),
-            ctx,
-        )?;
+        let skin = SkinData::new(&config.skin, ctx)?;
 
         // Set the window size
         ctx.gfx.set_mode(conf::WindowMode {
-            width: skin.background.image.width() as f32,
-            height: skin.background.height,
+            width: skin.current_skin.background.image.width() as f32,
+            height: skin.current_skin.background.height,
             resizable: true,
             ..Default::default()
         })?;
@@ -141,14 +137,14 @@ impl event::EventHandler for InputViewer {
         let mut canvas = graphics::Canvas::from_frame(ctx, None);
 
         // draw background
-        canvas.draw(&self.skin.background.image, DrawParam::new());
+        canvas.draw(&self.skin.current_skin.background.image, DrawParam::new());
 
         // Draw inputs
         self.events.iter().for_each(|event| {
-            let button_image = &self.skin.buttons[event].image;
+            let button_image = &self.skin.current_skin.buttons[event].image;
             canvas.draw(
                 button_image,
-                DrawParam::default().dest(self.skin.buttons[event].rect.point()),
+                DrawParam::default().dest(self.skin.current_skin.buttons[event].rect.point()),
             );
         });
 
