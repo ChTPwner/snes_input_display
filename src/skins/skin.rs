@@ -1,6 +1,6 @@
 use crate::controller::pressed::Pressed;
+use crate::skins::background::Background;
 use crate::skins::button::Button;
-use crate::skins::Background;
 use crate::skins::ButtonsMap;
 use crate::skins::{buttons_map_to_array, load_file, parse_backgrounds};
 use ggez::Context;
@@ -21,7 +21,7 @@ const SKIN_FILE_NAME: &str = "skin.xml";
 pub struct SkinConfig {
     pub skins_path: PathBuf,
     pub skin_name: String,
-    pub skin_theme: String,
+    pub skin_background: String,
 }
 
 pub struct SkinData {
@@ -69,10 +69,11 @@ impl Skin {
             .join(SKIN_FILE_NAME);
 
         let (backgrounds, buttons) = Skin::get_layout(file_path, &config.skin_name, ctx)?;
-        let background = match parse_backgrounds(backgrounds, &config.skin_theme.to_lowercase()) {
-            Some(t) => t,
-            None => return Err("could not parse background".into()),
-        };
+        let background =
+            match parse_backgrounds(backgrounds, &config.skin_background.to_lowercase()) {
+                Some(t) => t,
+                None => return Err("could not parse background".into()),
+            };
         Ok(Self {
             background,
             buttons: buttons_map_to_array(buttons)?,
@@ -90,11 +91,7 @@ impl Skin {
         loop {
             match reader.read_event() {
                 Ok(Event::Empty(t)) => match t.name().as_ref() {
-                    b"skin" => {
-                        for attribute in t.attributes().with_checks(false) {
-
-                        }
-                    }
+                    b"skin" => for attribute in t.attributes().with_checks(false) {},
                     b"background" => {
                         let bg = Background::new(t, skin_dir_name, ctx)?;
                         backgrounds.push(bg);

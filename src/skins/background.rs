@@ -1,7 +1,6 @@
 use ggez::{graphics::Image, Context};
 use quick_xml::events::BytesStart;
 use std::{
-    collections::HashMap,
     error::Error,
     path::{Path, MAIN_SEPARATOR_STR},
 };

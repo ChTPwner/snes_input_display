@@ -1,8 +1,7 @@
-use crate::controller::controller_impl::ControllerData;
-use crate::{controller::button_state::ButtonState, skins::skin::SkinData};
-
 use crate::configuration::AppConfig;
-use crate::skins::skin::Skin;
+use crate::controller::button_state::ButtonState;
+use crate::controller::controller_impl::ControllerData;
+use crate::skins::skin::SkinData;
 
 use ggez::{
     conf, event,

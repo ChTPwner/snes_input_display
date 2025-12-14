@@ -65,7 +65,7 @@ impl AppConfig {
             skin: SkinConfig {
                 skins_path: default_skins_dir_path,
                 skin_name: "skin_folder_name".to_string(),
-                skin_theme: "skin_theme".to_string(),
+                skin_background: "skin_theme".to_string(),
             },
             usb2snes: Some(USB2SnesEndpoint::default()),
         };

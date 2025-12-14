@@ -1,10 +1,11 @@
-mod Background;
+mod background;
 mod button;
 mod button_map;
 pub mod skin;
 
 use quick_xml::events::BytesStart;
 
+use crate::skins::background::Background;
 use crate::skins::button::Button;
 use crate::skins::button_map::ButtonsMap;
 
@@ -28,10 +29,10 @@ fn load_file(path: &Path) -> Result<String, Box<dyn std::error::Error>> {
     Ok(text)
 }
 
-fn parse_backgrounds(backgrounds_vec: Vec<Background>, Background: &String) -> Option<Background> {
+fn parse_backgrounds(backgrounds_vec: Vec<Background>, background: &String) -> Option<Background> {
     backgrounds_vec
         .into_iter()
-        .find(|background| background.Background.eq(Background))
+        .find(|background| background.background.eq(background))
 }
 
 fn parse_attributes(t: BytesStart) -> AttributeResult {
