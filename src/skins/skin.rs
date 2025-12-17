@@ -1,8 +1,8 @@
 use crate::controller::pressed::Pressed;
 use crate::skins::background::Background;
 use crate::skins::button::Button;
-use crate::skins::ButtonsMap;
 use crate::skins::{buttons_map_to_array, load_file, parse_backgrounds};
+use crate::skins::{parse_attributes, ButtonsMap};
 use ggez::Context;
 use quick_xml::events::Event;
 use quick_xml::Reader;
@@ -39,19 +39,42 @@ impl SkinData {
         })
     }
 
-    fn get_available_skins(path: &PathBuf) -> Result<Vec<String>, Box<dyn Error>> {
+    pub fn get_available_skins(path: &PathBuf) -> Result<Vec<String>, Box<dyn Error>> {
+        // read skin.xml file to find if type is snes
         let mut skins: Vec<String> = Vec::new();
         for entry in std::fs::read_dir(path)? {
             let entry = entry?;
             if entry.path().is_dir() {
                 let file_to_check = entry.path().join(SKIN_FILE_NAME);
-                match Skin::get_layout(file_to_check, entry.file_name().to_str().unwrap(), ctx) {
-                    Ok(_) => skins.push(entry.file_name().to_str().unwrap().to_string()),
-                    Err(_) => continue,
+                if let Ok(skin_name) = SkinData::validate_skin_file(&file_to_check) {
+                    skins.push(skin_name);
                 }
             }
-            Ok(skins)
         }
+        skins.sort();
+        Ok(skins)
+    }
+
+    fn validate_skin_file(file_path: &PathBuf) -> Result<String, Box<dyn Error>> {
+        let file = load_file(file_path)?;
+        let mut reader = Reader::from_str(&file);
+        loop {
+            match reader.read_event() {
+                Ok(Event::Start(t)) => match t.name().as_ref() {
+                    b"skin" => {
+                        let attributes = parse_attributes(t)?;
+                        if attributes["type"] == "snes" {
+                            return Ok(attributes["name"].to_owned().to_lowercase());
+                        }
+                    }
+                    _ => {}
+                },
+                Ok(Event::Eof) => break,
+                Err(_) => break,
+                _ => {}
+            }
+        }
+        Err("Invalid file".into())
     }
 }
 
@@ -91,7 +114,6 @@ impl Skin {
         loop {
             match reader.read_event() {
                 Ok(Event::Empty(t)) => match t.name().as_ref() {
-                    b"skin" => for attribute in t.attributes().with_checks(false) {},
                     b"background" => {
                         let bg = Background::new(t, skin_dir_name, ctx)?;
                         backgrounds.push(bg);
@@ -109,10 +131,4 @@ impl Skin {
         }
         Ok((backgrounds, buttons))
     }
-}
-
-struct SkinAttributes {
-    name: String,
-    author: String,
-    r#type: String,
 }

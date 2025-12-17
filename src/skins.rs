@@ -29,10 +29,10 @@ fn load_file(path: &Path) -> Result<String, Box<dyn std::error::Error>> {
     Ok(text)
 }
 
-fn parse_backgrounds(backgrounds_vec: Vec<Background>, background: &String) -> Option<Background> {
+fn parse_backgrounds(backgrounds_vec: Vec<Background>, background_name: &String) -> Option<Background> {
     backgrounds_vec
         .into_iter()
-        .find(|background| background.background.eq(background))
+        .find(|background| background.name.eq(background_name))
 }
 
 fn parse_attributes(t: BytesStart) -> AttributeResult {
@@ -102,8 +102,10 @@ fn buttons_map_to_array(
 
 #[cfg(test)]
 mod tests {
+    use crate::skins::skin::SkinData;
+
     use super::*;
-    use std::collections::BTreeMap;
+    use std::{collections::BTreeMap, path::PathBuf};
 
     #[test]
     fn buttons_map_to_array_missing_returns_err() {
@@ -140,5 +142,14 @@ mod tests {
                 idx, idx
             );
         }
+    }
+
+    #[test]
+    fn skin_file_validation() {
+        let test_path = PathBuf::from("test_files/skins/");
+        let valid_skins = SkinData::get_available_skins(&test_path)
+            .expect("should return a vector of valid skin names");
+        let expected_skins = ["valid1".to_string(), "valid2".to_string()].to_vec();
+        assert_eq!(valid_skins, expected_skins);
     }
 }

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<skin name="valid2" author="test" type="snes">
+
+	<background name="default" image="background.png" />
+
+    <button name="a" image="circle.png" x="982" y="272" />
+    <button name="b" image="circle.png" x="872" y="356" />
+    <button name="x" image="circle.png" x="876" y="138" />
+    <button name="y" image="circle.png" x="765" y="222" />
+
+    <button name="l" image="L.png" x="88" y="17" />
+    <button name="r" image="R.png" x="816" y="17" />
+
+    <button name="start" image="select.png" x="601" y="303" />
+    <button name="select" image="select.png" x="475" y="303" />
+
+    <button name="up" image="up.png" x="234" y="169" />
+    <button name="down" image="down.png" x="234" y="314" />
+    <button name="left" image="left.png" x="136" y="266" />
+    <button name="right" image="right.png" x="282" y="266" />
+
+</skin>
