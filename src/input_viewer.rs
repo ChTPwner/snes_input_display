@@ -16,6 +16,7 @@ use std::error::Error;
 pub const APP_NAME: &str = "Snes Input Display";
 
 pub struct InputViewer {
+    config: AppConfig,
     controller: ControllerData,
     skin: SkinData,
     client: Option<SyncClient>,
@@ -29,22 +30,18 @@ pub struct InputViewer {
 impl InputViewer {
     pub fn new(ctx: &mut Context, config: AppConfig) -> Result<Self, Box<dyn Error>> {
         let controller = ControllerData::new(&config.controller)?;
-
+        let config_copy = config.clone();
         let skin = SkinData::new(&config.skin, ctx)?;
 
         // Set the window size
-        ctx.gfx.set_mode(conf::WindowMode {
-            width: skin.current_skin.background.image.width() as f32,
-            height: skin.current_skin.background.height,
-            resizable: true,
-            ..Default::default()
-        })?;
 
-        let endpoint = config.usb2snes.unwrap_or_default();
+        let endpoint = config_copy.usb2snes.unwrap_or_default();
         let window_title = format!("{} - {}", APP_NAME, controller.layout_name);
+        InputViewer::set_background_and_size(ctx, &skin)?;
         ctx.gfx.set_window_title(&window_title);
 
         Ok(Self {
+            config,
             controller,
             skin,
             client: None,
@@ -54,6 +51,16 @@ impl InputViewer {
             window_title,
             endpoint,
         })
+    }
+
+    fn set_background_and_size(ctx: &mut Context, skin: &SkinData) -> Result<(), Box<dyn Error>> {
+        ctx.gfx.set_mode(conf::WindowMode {
+            width: skin.current_skin.background.image.width() as f32,
+            height: skin.current_skin.background.height,
+            resizable: true,
+            ..Default::default()
+        })?;
+        Ok(())
     }
 
     fn connect(&mut self) -> Result<Option<SyncClient>, Box<dyn Error>> {
@@ -100,6 +107,22 @@ impl event::EventHandler for InputViewer {
         } else if ctx.keyboard.is_key_just_released(KeyCode::K) {
             self.controller.get_prev_layout();
             self.update_title();
+        } else if ctx.keyboard.is_key_just_released(KeyCode::B) {
+            match self.skin.current_skin.get_next_background() {
+                Ok(s) => {
+                    self.config.skin.skin_background = s;
+                    self.skin = match SkinData::new(&self.config.skin, ctx){
+                        Ok(s) => s,
+                        Err(e) => {
+                            self.error_message = Some(format!("Error changing background: {}", e));
+                            return Ok(());
+                        }
+                    };
+                }
+                Err(e) => {
+                    self.error_message = Some(format!("Error changing background: {}", e));
+                }
+            }
         } else {
             match self.client {
                 Some(ref mut c) => match self.controller.current_addresses.pushed(c) {

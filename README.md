@@ -74,6 +74,7 @@ $ chmod +x snes_input_display_mac_amd64
 ## Keyboard shortcurts
 - J = select next entry in the layouts from the controller config file
 - K = select previous entry in the layouts from the controller config file
+- B = select the next available background for your chosen Retroskin
 
 ## Game List Working with the Defaults layout
 You should try with the Default Layout if you're on the Sd2Snes/FxPakPro. It will NOT work with an emulator

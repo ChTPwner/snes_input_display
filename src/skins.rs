@@ -29,7 +29,7 @@ fn load_file(path: &Path) -> Result<String, Box<dyn std::error::Error>> {
     Ok(text)
 }
 
-fn parse_backgrounds(backgrounds_vec: Vec<Background>, background_name: &String) -> Option<Background> {
+fn get_wanted_background(backgrounds_vec: Vec<Background>, background_name: &String) -> Option<Background> {
     backgrounds_vec
         .into_iter()
         .find(|background| background.name.eq(background_name))

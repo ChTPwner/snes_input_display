@@ -5,7 +5,7 @@ use std::{collections::HashMap, fs};
 
 use crate::controller::controller_addresses::ControllerAddresses;
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct ControllerConfig {
     pub input_config_path: PathBuf,
     pub layout: String,

@@ -15,6 +15,6 @@ serde_json = "1.0"
 quick-xml = { version = "0.38", features = ["overlapped-lists", "serialize"] }
 dirs = "6"
 ggez = "0.9"
-rusb2snes = { path = "../rusb2snes", version = "0.3"}
+rusb2snes = { path = "../rusb2snes", version = "^0.3.2"}
 
 toml = "0.9"

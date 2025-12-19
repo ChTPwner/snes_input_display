@@ -2,6 +2,7 @@
 <skin name="valid1" author="test" type="snes">
 
 	<background name="default" image="background.png" />
+	<background name="default2" image="background.png" />
 
     <button name="a" image="circle.png" x="982" y="272" />
     <button name="b" image="circle.png" x="872" y="356" />

@@ -1,12 +1,12 @@
+use crate::configuration::SkinConfig;
 use crate::controller::pressed::Pressed;
 use crate::skins::background::Background;
 use crate::skins::button::Button;
-use crate::skins::{buttons_map_to_array, load_file, parse_backgrounds};
+use crate::skins::{buttons_map_to_array, get_wanted_background, load_file};
 use crate::skins::{parse_attributes, ButtonsMap};
 use ggez::Context;
 use quick_xml::events::Event;
 use quick_xml::Reader;
-use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -17,13 +17,6 @@ type LayoutResult = Result<(Vec<Background>, BTreeMap<Pressed, Button>), Box<dyn
 
 const SKIN_FILE_NAME: &str = "skin.xml";
 
-#[derive(Deserialize, Serialize, Debug)]
-pub struct SkinConfig {
-    pub skins_path: PathBuf,
-    pub skin_name: String,
-    pub skin_background: String,
-}
-
 pub struct SkinData {
     pub current_skin: Skin,
     pub available_skins: Vec<String>,
@@ -31,11 +24,9 @@ pub struct SkinData {
 
 impl SkinData {
     pub fn new(config: &SkinConfig, ctx: &mut Context) -> Result<SkinData, Box<dyn Error>> {
-        let available_skins = SkinData::get_available_skins(&config.skins_path)?;
-
         Ok(SkinData {
             current_skin: Skin::new(config, ctx)?,
-            available_skins,
+            available_skins: SkinData::get_available_skins(&config.skins_path)?,
         })
     }
 
@@ -82,6 +73,7 @@ impl SkinData {
 pub struct Skin {
     pub background: Background,
     pub buttons: Box<ButtonsMap>,
+    pub available_backgrounds: Vec<String>,
 }
 
 impl Skin {
@@ -90,17 +82,37 @@ impl Skin {
             .skins_path
             .join(&config.skin_name)
             .join(SKIN_FILE_NAME);
-
+        let mut available_backgrounds: Vec<String> = Vec::new();
         let (backgrounds, buttons) = Skin::get_layout(file_path, &config.skin_name, ctx)?;
+        for background in &backgrounds {
+            available_backgrounds.push(background.name.clone());
+        }
         let background =
-            match parse_backgrounds(backgrounds, &config.skin_background.to_lowercase()) {
+            match get_wanted_background(backgrounds, &config.skin_background.to_lowercase()) {
                 Some(t) => t,
                 None => return Err("could not parse background".into()),
             };
         Ok(Self {
             background,
             buttons: buttons_map_to_array(buttons)?,
+            available_backgrounds,
         })
+    }
+
+    pub fn get_next_background(&mut self) -> Result<String, Box<dyn Error>> {
+        // find the current background index
+        let index = match self
+            .available_backgrounds
+            .iter()
+            .position(|x| x == &self.background.name)
+        {
+            Some(i) => i,
+            None => return Err("could not find background".into()),
+        };
+        // set the new background name
+        let new_name =
+            self.available_backgrounds[(index + 1) % self.available_backgrounds.len()].clone();
+        Ok(new_name)
     }
 
     fn get_layout(file_path: PathBuf, skin_dir_name: &str, ctx: &mut Context) -> LayoutResult {
