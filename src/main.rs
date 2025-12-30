@@ -15,7 +15,7 @@ fn main() -> Result<GameResult, Box<dyn Error>> {
     let config_path = env::args().nth(1);
     let app_config = AppConfig::new(config_path)?;
 
-    let (mut ctx, event_loop) = ContextBuilder::new(APP_NAME, "ChTBoner")
+    let (mut ctx, event_loop) = ContextBuilder::new(APP_NAME, "ChTPwner")
         .add_resource_path(&app_config.skin.skins_path)
         .build()
         .expect("aieee, could not create ggez context!");

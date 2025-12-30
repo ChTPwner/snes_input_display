@@ -11,7 +11,7 @@ use crate::skins::parse_attributes;
 pub struct Background {
     pub name: String,
     pub image: Image,
-    // pub width: f32,
+    pub width: f32,
     pub height: f32,
 }
 
@@ -22,13 +22,13 @@ impl Background {
             .join(skin_dir)
             .join(&attributes["image"]);
         let image = Image::from_path(ctx, image_path)?;
-        // let width = image.width() as f32;
+        let width = image.width() as f32;
         let height = image.height() as f32;
 
         Ok(Self {
             name: attributes["name"].to_owned().to_lowercase(),
             image,
-            // width,
+            width,
             height,
         })
     }

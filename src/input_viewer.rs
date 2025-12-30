@@ -37,7 +37,14 @@ impl InputViewer {
 
         let endpoint = config_copy.usb2snes.unwrap_or_default();
         let window_title = format!("{} - {}", APP_NAME, controller.layout_name);
-        InputViewer::set_background_and_size(ctx, &skin)?;
+        InputViewer::set_size(ctx, &skin)?;
+        // ctx.gfx.set_mode(conf::WindowMode {
+        //     width: skin.current_skin.background.width,
+        //     height: skin.current_skin.background.height,
+        //     resizable: true,
+        //     resize_on_scale_factor_change: false,
+        //     ..Default::default()
+        // })?;
         ctx.gfx.set_window_title(&window_title);
 
         Ok(Self {
@@ -53,13 +60,10 @@ impl InputViewer {
         })
     }
 
-    fn set_background_and_size(ctx: &mut Context, skin: &SkinData) -> Result<(), Box<dyn Error>> {
-        ctx.gfx.set_mode(conf::WindowMode {
-            width: skin.current_skin.background.image.width() as f32,
-            height: skin.current_skin.background.height,
-            resizable: true,
-            ..Default::default()
-        })?;
+    fn set_size(ctx: &mut Context, skin: &SkinData) -> Result<(), Box<dyn Error>> {
+        ctx.gfx.set_drawable_size(skin.current_skin.background.width, skin.current_skin.background.height)?;
+        // dbg!(ctx.gfx.size());
+        // dbg!(ctx.gfx.drawable_size());
         Ok(())
     }
 
@@ -101,16 +105,19 @@ impl InputViewer {
 
 impl event::EventHandler for InputViewer {
     fn update(&mut self, ctx: &mut Context) -> GameResult {
+        // get next layout
         if ctx.keyboard.is_key_just_released(KeyCode::J) {
             self.controller.get_next_layout();
             self.window_title = format!("{} - {}", APP_NAME, self.controller.layout_name);
+        // get previous layout
         } else if ctx.keyboard.is_key_just_released(KeyCode::K) {
             self.controller.get_prev_layout();
             self.update_title();
+        // get next background
         } else if ctx.keyboard.is_key_just_released(KeyCode::B) {
             match self.skin.current_skin.get_next_background() {
                 Ok(s) => {
-                    self.config.skin.skin_background = s;
+                    self.config.skin.skin_background = Some(s);
                     self.skin = match SkinData::new(&self.config.skin, ctx) {
                         Ok(s) => s,
                         Err(e) => {
@@ -125,25 +132,30 @@ impl event::EventHandler for InputViewer {
             }
         } else if ctx.keyboard.is_key_just_released(KeyCode::H) {
             // get previous skin
-            match self.skin.get_previous_skin() {
-                // need to implement getting default Background after skin change
-                Ok(s) => {
-                    self.config.skin.skin_name = s;
-                    self.skin = match SkinData::new(&self.config.skin, ctx) {
-                        Ok(s) => s,
-                        Err(e) => {
-                            self.error_message = Some(format!("Error changing skin: {}", e));
-                            return Ok(());
-                        }
-                    };
-                }
+            match self.skin.get_previous_skin(&mut self.config.skin, ctx) {
+                Ok(_) => {
+                    match InputViewer::set_size(ctx, &self.skin) {
+                        Ok(_) => {},
+                        Err(e) => self.error_message = Some(format!("Error resizing window: {}", e)),
+                    }
+                },
                 Err(e) => {
                     self.error_message = Some(format!("Error changing skin: {}", e));
                 }
-            }
+            };
         } else if ctx.keyboard.is_key_just_released(KeyCode::L) {
             // get next skin
-            self.skin.get_next_skin();
+            match self.skin.get_next_skin(&mut self.config.skin, ctx) {
+                Ok(_) => {
+                    match InputViewer::set_size(ctx, &self.skin) {
+                        Ok(_) => {},
+                        Err(e) => self.error_message = Some(format!("Error resizing window: {}", e)),
+                    }
+                },
+                Err(e) => {
+                    self.error_message = Some(format!("Error changing skin: {}", e));
+                }
+            };
         } else {
             match self.client {
                 Some(ref mut c) => match self.controller.current_addresses.pushed(c) {
@@ -177,10 +189,12 @@ impl event::EventHandler for InputViewer {
     }
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
-        let mut canvas = graphics::Canvas::from_frame(ctx, None);
+        let mut canvas = graphics::Canvas::from_frame(ctx, Color::BLACK);
 
         // draw background
         canvas.draw(&self.skin.current_skin.background.image, DrawParam::new());
+        dbg!(ctx.gfx.drawable_size());
+        dbg!(ctx.gfx.size());
 
         // Draw inputs
         self.events.iter().for_each(|event| {

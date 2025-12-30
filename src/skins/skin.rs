@@ -37,8 +37,8 @@ impl SkinData {
             let entry = entry?;
             if entry.path().is_dir() {
                 let file_to_check = entry.path().join(SKIN_FILE_NAME);
-                if let Ok(skin_name) = SkinData::validate_skin_file(&file_to_check) {
-                    skins.push(skin_name);
+                if SkinData::validate_skin_file(&file_to_check).is_ok() {
+                    skins.push(entry.file_name().to_string_lossy().to_string());
                 }
             }
         }
@@ -67,34 +67,51 @@ impl SkinData {
         Err("Invalid file".into())
     }
 
-    pub fn get_previous_skin(&mut self) -> Result<String, Box<dyn Error>> {
-        // find the current skin index
+    fn get_current_skin_index(&mut self, skin_name: &String) -> Result<usize, Box<dyn Error>> {
         let index = match self
             .available_skins
             .iter()
-            .position(|x| x == &self.current_skin.background.name)
+            .position(|x| x == skin_name)
         {
             Some(i) => i,
-            None => return Err("Error getting previous skin".into()),
+            None => return Err("Error getting skin index".into()),
         };
-        // set the new skin name
-        Ok(self.available_skins
-            [(index + self.available_skins.len() - 1) % self.available_skins.len()]
-        .clone())
+
+        Ok(index)
     }
 
-    pub fn get_next_skin(&mut self) -> Result<String, Box<dyn Error>> {
+    pub fn get_previous_skin(
+        &mut self,
+        skin_config: &mut SkinConfig,
+        ctx: &mut Context,
+    ) -> Result<(), Box<dyn Error>> {
         // find the current skin index
-        let index = match self
-            .available_skins
-            .iter()
-            .position(|x| x == &self.current_skin.background.name)
-        {
-            Some(i) => i,
-            None => return Err("Error getting next skin".into()),
-        };
+        let index = &self.get_current_skin_index(&skin_config.skin_name)?;
         // set the new skin name
-        Ok(self.available_skins[(index + 1) % self.available_skins.len()].clone())
+        skin_config.skin_name = self.available_skins
+            [(index + self.available_skins.len() - 1) % self.available_skins.len()]
+        .clone();
+        dbg!(&skin_config.skin_name);
+        skin_config.skin_background = None;
+        self.current_skin = Skin::new(skin_config, ctx)?;
+        Ok(())
+    }
+
+    pub fn get_next_skin(
+        &mut self,
+        skin_config: &mut SkinConfig,
+        ctx: &mut Context,
+    ) -> Result<(), Box<dyn Error>> {
+        // find the current skin index
+        let index = &self.get_current_skin_index(&skin_config.skin_name)?;
+        // set the new skin name
+        skin_config.skin_name =
+            self.available_skins[(index + 1) % self.available_skins.len()].clone();
+        dbg!(&skin_config.skin_name);
+        skin_config.skin_background = None;
+        self.current_skin = Skin::new(skin_config, ctx)?;
+        skin_config.skin_background = Some(self.current_skin.background.name.to_owned());
+        Ok(())
     }
 }
 
@@ -116,11 +133,14 @@ impl Skin {
         for background in &backgrounds {
             available_backgrounds.push(background.name.clone());
         }
-        let background =
-            match get_wanted_background(backgrounds, &config.skin_background.to_lowercase()) {
-                Some(t) => t,
-                None => return Err("could not parse background".into()),
-            };
+        let background_name = match &config.skin_background {
+            Some(n) => n,
+            None => &available_backgrounds[0],
+        };
+        let background = match get_wanted_background(backgrounds, &background_name.to_lowercase()) {
+            Some(t) => t,
+            None => return Err("could not parse background".into()),
+        };
         Ok(Self {
             background,
             buttons: buttons_map_to_array(buttons)?,
