@@ -9,7 +9,7 @@ use quick_xml::events::Event;
 use quick_xml::Reader;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use std::error::Error;
 
@@ -46,26 +46,55 @@ impl SkinData {
         Ok(skins)
     }
 
-    fn validate_skin_file(file_path: &PathBuf) -> Result<String, Box<dyn Error>> {
+    fn validate_skin_file(file_path: &Path) -> Result<String, Box<dyn Error>> {
         let file = load_file(file_path)?;
         let mut reader = Reader::from_str(&file);
         loop {
             match reader.read_event() {
-                Ok(Event::Start(t)) => match t.name().as_ref() {
-                    b"skin" => {
+                Ok(Event::Start(t)) => {
+                    if t.name().as_ref() == b"skin" {
                         let attributes = parse_attributes(t)?;
                         if attributes["type"] == "snes" {
                             return Ok(attributes["name"].to_owned().to_lowercase());
                         }
                     }
-                    _ => {}
-                },
+                }
                 Ok(Event::Eof) => break,
                 Err(_) => break,
                 _ => {}
             }
         }
         Err("Invalid file".into())
+    }
+
+    pub fn get_previous_skin(&mut self) -> Result<String, Box<dyn Error>> {
+        // find the current skin index
+        let index = match self
+            .available_skins
+            .iter()
+            .position(|x| x == &self.current_skin.background.name)
+        {
+            Some(i) => i,
+            None => return Err("Error getting previous skin".into()),
+        };
+        // set the new skin name
+        Ok(self.available_skins
+            [(index + self.available_skins.len() - 1) % self.available_skins.len()]
+        .clone())
+    }
+
+    pub fn get_next_skin(&mut self) -> Result<String, Box<dyn Error>> {
+        // find the current skin index
+        let index = match self
+            .available_skins
+            .iter()
+            .position(|x| x == &self.current_skin.background.name)
+        {
+            Some(i) => i,
+            None => return Err("Error getting next skin".into()),
+        };
+        // set the new skin name
+        Ok(self.available_skins[(index + 1) % self.available_skins.len()].clone())
     }
 }
 

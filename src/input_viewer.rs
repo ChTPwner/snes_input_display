@@ -111,7 +111,7 @@ impl event::EventHandler for InputViewer {
             match self.skin.current_skin.get_next_background() {
                 Ok(s) => {
                     self.config.skin.skin_background = s;
-                    self.skin = match SkinData::new(&self.config.skin, ctx){
+                    self.skin = match SkinData::new(&self.config.skin, ctx) {
                         Ok(s) => s,
                         Err(e) => {
                             self.error_message = Some(format!("Error changing background: {}", e));
@@ -123,6 +123,27 @@ impl event::EventHandler for InputViewer {
                     self.error_message = Some(format!("Error changing background: {}", e));
                 }
             }
+        } else if ctx.keyboard.is_key_just_released(KeyCode::H) {
+            // get previous skin
+            match self.skin.get_previous_skin() {
+                // need to implement getting default Background after skin change
+                Ok(s) => {
+                    self.config.skin.skin_name = s;
+                    self.skin = match SkinData::new(&self.config.skin, ctx) {
+                        Ok(s) => s,
+                        Err(e) => {
+                            self.error_message = Some(format!("Error changing skin: {}", e));
+                            return Ok(());
+                        }
+                    };
+                }
+                Err(e) => {
+                    self.error_message = Some(format!("Error changing skin: {}", e));
+                }
+            }
+        } else if ctx.keyboard.is_key_just_released(KeyCode::L) {
+            // get next skin
+            self.skin.get_next_skin();
         } else {
             match self.client {
                 Some(ref mut c) => match self.controller.current_addresses.pushed(c) {

@@ -29,7 +29,10 @@ fn load_file(path: &Path) -> Result<String, Box<dyn std::error::Error>> {
     Ok(text)
 }
 
-fn get_wanted_background(backgrounds_vec: Vec<Background>, background_name: &String) -> Option<Background> {
+fn get_wanted_background(
+    backgrounds_vec: Vec<Background>,
+    background_name: &String,
+) -> Option<Background> {
     backgrounds_vec
         .into_iter()
         .find(|background| background.name.eq(background_name))
@@ -38,7 +41,7 @@ fn get_wanted_background(backgrounds_vec: Vec<Background>, background_name: &Str
 fn parse_attributes(t: BytesStart) -> AttributeResult {
     let mut attributes_map = HashMap::new();
     for attr in t.attributes().with_checks(false) {
-        let attr = attr.map_err(|e| Box::<dyn Error>::from(e))?;
+        let attr = attr.map_err(Box::<dyn Error>::from)?;
         let key_bytes = attr.key.local_name().into_inner();
         let key = std::str::from_utf8(key_bytes)?.to_string();
         let value = attr.unescape_value()?.into_owned();
