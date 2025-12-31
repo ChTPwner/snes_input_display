@@ -71,10 +71,14 @@ $ chmod +x snes_input_display_linux_amd64
 $ chmod +x snes_input_display_mac_amd64
 ```
 
-## Keyboard shortcurts
-- J = select next entry in the layouts from the controller config file
-- K = select previous entry in the layouts from the controller config file
-- B = select the next available background for your chosen Retroskin
+## Keyboard shortcurts (aka. Your introduction to vim motions... :D)
+- j = select next entry in the layouts from the controller config file
+- k = select previous entry in the layouts from the controller config file
+- h = select the previous available retroskin
+- l = select the next available retroskin
+- b = select the next available background for your chosen Retroskin
+
+Changing skin under Wayland is buggy and might not work as expected.
 
 ## Game List Working with the Defaults layout
 You should try with the Default Layout if you're on the Sd2Snes/FxPakPro. It will NOT work with an emulator
