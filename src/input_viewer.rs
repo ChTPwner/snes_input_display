@@ -38,13 +38,13 @@ impl InputViewer {
         let endpoint = config_copy.usb2snes.unwrap_or_default();
         let window_title = format!("{} - {}", APP_NAME, controller.layout_name);
         InputViewer::set_size(ctx, &skin)?;
-        // ctx.gfx.set_mode(conf::WindowMode {
-        //     width: skin.current_skin.background.width,
-        //     height: skin.current_skin.background.height,
-        //     resizable: true,
-        //     resize_on_scale_factor_change: false,
-        //     ..Default::default()
-        // })?;
+        ctx.gfx.set_mode(conf::WindowMode {
+            width: skin.current_skin.background.width,
+            height: skin.current_skin.background.height,
+            resizable: true,
+            resize_on_scale_factor_change: false,
+            ..Default::default()
+        })?;
         ctx.gfx.set_window_title(&window_title);
 
         Ok(Self {
@@ -62,8 +62,8 @@ impl InputViewer {
 
     fn set_size(ctx: &mut Context, skin: &SkinData) -> Result<(), Box<dyn Error>> {
         ctx.gfx.set_drawable_size(skin.current_skin.background.width, skin.current_skin.background.height)?;
-        // dbg!(ctx.gfx.size());
-        // dbg!(ctx.gfx.drawable_size());
+        dbg!(ctx.gfx.size());
+        dbg!(ctx.gfx.drawable_size());
         Ok(())
     }
 
@@ -193,8 +193,8 @@ impl event::EventHandler for InputViewer {
 
         // draw background
         canvas.draw(&self.skin.current_skin.background.image, DrawParam::new());
-        dbg!(ctx.gfx.drawable_size());
-        dbg!(ctx.gfx.size());
+        // dbg!(ctx.gfx.drawable_size());
+        // dbg!(ctx.gfx.size());
 
         // Draw inputs
         self.events.iter().for_each(|event| {
