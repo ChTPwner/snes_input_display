@@ -1,8 +1,8 @@
+use crate::configuration::AppConfig;
 use crate::controller::button_state::ButtonState;
 use crate::controller::controller_impl::ControllerData;
+use crate::skins::skin::SkinData;
 
-use crate::configuration::AppConfig;
-use crate::skins::skin::Skin;
 use ggez::{
     conf, event,
     graphics::{self, Color, DrawParam, Text, TextFragment},
@@ -16,8 +16,9 @@ use std::error::Error;
 pub const APP_NAME: &str = "Snes Input Display";
 
 pub struct InputViewer {
+    config: AppConfig,
     controller: ControllerData,
-    skin: Skin,
+    skin: SkinData,
     client: Option<SyncClient>,
     events: ButtonState,
     error_message: Option<String>,
@@ -29,27 +30,25 @@ pub struct InputViewer {
 impl InputViewer {
     pub fn new(ctx: &mut Context, config: AppConfig) -> Result<Self, Box<dyn Error>> {
         let controller = ControllerData::new(&config.controller)?;
-
-        let skin = Skin::new(
-            &config.skin.skins_path,
-            &config.skin.skin_name,
-            &config.skin.skin_theme.to_lowercase(),
-            ctx,
-        )?;
+        let config_copy = config.clone();
+        let skin = SkinData::new(&config.skin, ctx)?;
 
         // Set the window size
+
+        let endpoint = config_copy.usb2snes.unwrap_or_default();
+        let window_title = format!("{} - {}", APP_NAME, controller.layout_name);
+        InputViewer::set_size(ctx, &skin)?;
         ctx.gfx.set_mode(conf::WindowMode {
-            width: skin.background.image.width() as f32,
-            height: skin.background.height,
+            width: skin.current_skin.background.width,
+            height: skin.current_skin.background.height,
             resizable: true,
+            resize_on_scale_factor_change: false,
             ..Default::default()
         })?;
-
-        let endpoint = config.usb2snes.unwrap_or_default();
-        let window_title = format!("{} - {}", APP_NAME, controller.layout_name);
         ctx.gfx.set_window_title(&window_title);
 
         Ok(Self {
+            config,
             controller,
             skin,
             client: None,
@@ -59,6 +58,13 @@ impl InputViewer {
             window_title,
             endpoint,
         })
+    }
+
+    fn set_size(ctx: &mut Context, skin: &SkinData) -> Result<(), Box<dyn Error>> {
+        ctx.gfx.set_drawable_size(skin.current_skin.background.width, skin.current_skin.background.height)?;
+        dbg!(ctx.gfx.size());
+        dbg!(ctx.gfx.drawable_size());
+        Ok(())
     }
 
     fn connect(&mut self) -> Result<Option<SyncClient>, Box<dyn Error>> {
@@ -99,12 +105,57 @@ impl InputViewer {
 
 impl event::EventHandler for InputViewer {
     fn update(&mut self, ctx: &mut Context) -> GameResult {
+        // get next layout
         if ctx.keyboard.is_key_just_released(KeyCode::J) {
             self.controller.get_next_layout();
             self.window_title = format!("{} - {}", APP_NAME, self.controller.layout_name);
+        // get previous layout
         } else if ctx.keyboard.is_key_just_released(KeyCode::K) {
             self.controller.get_prev_layout();
             self.update_title();
+        // get next background
+        } else if ctx.keyboard.is_key_just_released(KeyCode::B) {
+            match self.skin.current_skin.get_next_background() {
+                Ok(s) => {
+                    self.config.skin.skin_background = Some(s);
+                    self.skin = match SkinData::new(&self.config.skin, ctx) {
+                        Ok(s) => s,
+                        Err(e) => {
+                            self.error_message = Some(format!("Error changing background: {}", e));
+                            return Ok(());
+                        }
+                    };
+                }
+                Err(e) => {
+                    self.error_message = Some(format!("Error changing background: {}", e));
+                }
+            }
+        } else if ctx.keyboard.is_key_just_released(KeyCode::H) {
+            // get previous skin
+            match self.skin.get_previous_skin(&mut self.config.skin, ctx) {
+                Ok(_) => {
+                    match InputViewer::set_size(ctx, &self.skin) {
+                        Ok(_) => {},
+                        Err(e) => self.error_message = Some(format!("Error resizing window: {}", e)),
+                    }
+                },
+                Err(e) => {
+                    self.error_message = Some(format!("Error changing skin: {}", e));
+                }
+            };
+        } else if ctx.keyboard.is_key_just_released(KeyCode::L) {
+            // get next skin
+            match self.skin.get_next_skin(&mut self.config.skin, ctx) {
+                Ok(_) => {
+                    match InputViewer::set_size(ctx, &self.skin) {
+                        Ok(_) => {},
+                        Err(e) => self.error_message = Some(format!("Error resizing window: {}", e)),
+                    }
+                },
+                Err(e) => {
+                    self.error_message = Some(format!("Error changing skin: {}", e));
+                }
+            };
         } else {
             match self.client {
                 Some(ref mut c) => match self.controller.current_addresses.pushed(c) {
@@ -138,17 +189,19 @@ impl event::EventHandler for InputViewer {
     }
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
-        let mut canvas = graphics::Canvas::from_frame(ctx, None);
+        let mut canvas = graphics::Canvas::from_frame(ctx, Color::BLACK);
 
         // draw background
-        canvas.draw(&self.skin.background.image, DrawParam::new());
+        canvas.draw(&self.skin.current_skin.background.image, DrawParam::new());
+        // dbg!(ctx.gfx.drawable_size());
+        // dbg!(ctx.gfx.size());
 
         // Draw inputs
         self.events.iter().for_each(|event| {
-            let button_image = &self.skin.buttons[event].image;
+            let button_image = &self.skin.current_skin.buttons[event].image;
             canvas.draw(
                 button_image,
-                DrawParam::default().dest(self.skin.buttons[event].rect.point()),
+                DrawParam::default().dest(self.skin.current_skin.buttons[event].rect.point()),
             );
         });
 

@@ -5,13 +5,19 @@ use std::fs::{read_to_string, write, File};
 use std::path::{Path, PathBuf};
 
 use crate::controller::controller_impl::ControllerConfig;
-use crate::skins::skin::SkinConfig;
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct AppConfig {
     pub controller: ControllerConfig,
     pub skin: SkinConfig,
     pub usb2snes: Option<USB2SnesEndpoint>,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+pub struct SkinConfig {
+    pub skins_path: PathBuf,
+    pub skin_name: String,
+    pub skin_background: Option<String>,
 }
 
 impl AppConfig {
@@ -65,7 +71,7 @@ impl AppConfig {
             skin: SkinConfig {
                 skins_path: default_skins_dir_path,
                 skin_name: "skin_folder_name".to_string(),
-                skin_theme: "skin_theme".to_string(),
+                skin_background: Some("skin_theme".to_string()),
             },
             usb2snes: Some(USB2SnesEndpoint::default()),
         };

@@ -1,17 +1,14 @@
+mod background;
 mod button;
 mod button_map;
 pub mod skin;
-mod theme;
 
+use quick_xml::events::BytesStart;
+
+use crate::skins::background::Background;
 use crate::skins::button::Button;
 use crate::skins::button_map::ButtonsMap;
-use crate::skins::theme::Theme;
 
-use ggez::Context;
-use quick_xml::{
-    events::{BytesStart, Event},
-    reader::Reader,
-};
 use std::{
     collections::{BTreeMap, HashMap},
     convert::TryInto,
@@ -19,42 +16,11 @@ use std::{
     fs,
     io::{self, Read},
     path::Path,
-    path::PathBuf,
 };
 
 use crate::controller::pressed::Pressed;
 
-type LayoutResult = Result<(Vec<Theme>, BTreeMap<Pressed, Button>), Box<dyn Error>>;
 type AttributeResult = Result<HashMap<String, String>, Box<dyn Error>>;
-
-fn get_layout(file_path: PathBuf, name: &str, ctx: &mut Context) -> LayoutResult {
-    let file = load_file(&file_path)?;
-    // let layout_name = Path::new(name);
-    let mut reader = Reader::from_str(&file);
-    let mut _metadata: HashMap<String, String> = HashMap::new();
-    let mut backgrounds: Vec<Theme> = Vec::new();
-    let mut buttons: BTreeMap<Pressed, Button> = BTreeMap::new();
-
-    loop {
-        match reader.read_event() {
-            Ok(Event::Empty(t)) => match t.name().as_ref() {
-                b"background" => {
-                    let bg = Theme::new(t, name, ctx)?;
-                    backgrounds.push(bg);
-                }
-                b"button" => {
-                    let bt = Button::new(t, name, ctx)?;
-                    buttons.insert(bt.name, bt);
-                }
-                _ => {}
-            },
-            Err(e) => panic!("Error at position {}: {:?}", reader.buffer_position(), e),
-            Ok(Event::Eof) => break,
-            _ => (),
-        }
-    }
-    Ok((backgrounds, buttons))
-}
 
 fn load_file(path: &Path) -> Result<String, Box<dyn std::error::Error>> {
     let mut file = fs::File::open(path)?;
@@ -63,12 +29,26 @@ fn load_file(path: &Path) -> Result<String, Box<dyn std::error::Error>> {
     Ok(text)
 }
 
-fn parse_backgrounds(backgrounds_vec: Vec<Theme>, theme: &String) -> Option<Theme> {
+fn get_wanted_background(
+    backgrounds_vec: Vec<Background>,
+    background_name: &String,
+) -> Option<Background> {
     backgrounds_vec
         .into_iter()
-        .find(|background| background.theme.eq(theme))
+        .find(|background| background.name.eq(background_name))
 }
 
+fn parse_attributes(t: BytesStart) -> AttributeResult {
+    let mut attributes_map = HashMap::new();
+    for attr in t.attributes().with_checks(false) {
+        let attr = attr.map_err(Box::<dyn Error>::from)?;
+        let key_bytes = attr.key.local_name().into_inner();
+        let key = std::str::from_utf8(key_bytes)?.to_string();
+        let value = attr.unescape_value()?.into_owned();
+        attributes_map.insert(key, value);
+    }
+    Ok(attributes_map)
+}
 /// Generic helper that builds a fixed-size array of items for the expected `Pressed` ordering.
 /// This allows testing the mapping logic using simple types (e.g. integers) without constructing
 /// heavy `Button` values.
@@ -123,22 +103,12 @@ fn buttons_map_to_array(
     Ok(Box::new(ButtonsMap(arr)))
 }
 
-fn parse_attributes(t: BytesStart) -> AttributeResult {
-    let mut attributes_map = HashMap::new();
-    for attr in t.attributes().with_checks(false) {
-        let attr = attr.map_err(|e| Box::<dyn Error>::from(e))?;
-        let key_bytes = attr.key.local_name().into_inner();
-        let key = std::str::from_utf8(key_bytes)?.to_string();
-        let value = attr.unescape_value()?.into_owned();
-        attributes_map.insert(key, value);
-    }
-    Ok(attributes_map)
-}
-
 #[cfg(test)]
 mod tests {
+    use crate::skins::skin::SkinData;
+
     use super::*;
-    use std::collections::BTreeMap;
+    use std::{collections::BTreeMap, path::PathBuf};
 
     #[test]
     fn buttons_map_to_array_missing_returns_err() {
@@ -175,5 +145,14 @@ mod tests {
                 idx, idx
             );
         }
+    }
+
+    #[test]
+    fn skin_file_validation() {
+        let test_path = PathBuf::from("test_files/skins/");
+        let valid_skins = SkinData::get_available_skins(&test_path)
+            .expect("should return a vector of valid skin names");
+        let expected_skins = ["valid1".to_string(), "valid2".to_string()].to_vec();
+        assert_eq!(valid_skins, expected_skins);
     }
 }
